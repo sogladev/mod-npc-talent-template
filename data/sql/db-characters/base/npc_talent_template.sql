@@ -1,5 +1,4 @@
 -- DB: characters
-
 CREATE TABLE IF NOT EXISTS `template_npc_alliance` (
   `playerClass` varchar(50) NOT NULL,
   `playerSpec` varchar(50) NOT NULL,
