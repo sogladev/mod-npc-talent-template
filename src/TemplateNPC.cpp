@@ -299,7 +299,7 @@ void sTemplateNPC::LearnTemplateTalents(Player* player)
                     player->learnSpellHighRank(33878); // mangle bear
                     player->learnSpellHighRank(50334); // berserk
                 }
-                if ((*itr)->playerSpec == "Ballance")
+                if ((*itr)->playerSpec == "Balance")
                 {
                     player->learnSpellHighRank(33831); // force of nature
                     player->learnSpellHighRank(50516); // typhoon
@@ -849,11 +849,11 @@ public:
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\Trade_Engineering:30|t|r Reset Talents", GOSSIP_SENDER_MAIN, 31);*/
             break;
         case CLASS_DRUID:
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_starfall:30|t|r Use Ballance Spec", GOSSIP_SENDER_MAIN, 18);
+            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_starfall:30|t|r Use Balance Spec", GOSSIP_SENDER_MAIN, 18);
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_racial_bearform:30|t|r Use Feral Spec", GOSSIP_SENDER_MAIN, 19);
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_healingtouch:30|t|r Use Restoration Spec", GOSSIP_SENDER_MAIN, 20);
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_starfall:30|t|r Use Ballance Spec (Talents Only)", GOSSIP_SENDER_MAIN, 118);
+            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_starfall:30|t|r Use Balance Spec (Talents Only)", GOSSIP_SENDER_MAIN, 118);
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_racial_bearform:30|t|r Use Feral Spec (Talents Only)", GOSSIP_SENDER_MAIN, 119);
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_healingtouch:30|t|r Use Restoration Spec (Talents Only)", GOSSIP_SENDER_MAIN, 120);
             /*AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
@@ -1121,8 +1121,8 @@ public:
             CloseGossipMenuFor(player);
             break;
 
-        case 18: // Use Ballance Druid Spec
-            sTemplateNpcMgr->sTalentsSpec = "Ballance";
+        case 18: // Use Balance Druid Spec
+            sTemplateNpcMgr->sTalentsSpec = "Balance";
             EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
             CloseGossipMenuFor(player);
             break;
@@ -1348,7 +1348,7 @@ public:
 
             // Druid
         case 118:
-            sTemplateNpcMgr->sTalentsSpec = "Ballance";
+            sTemplateNpcMgr->sTalentsSpec = "Balance";
             LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
             CloseGossipMenuFor(player);
             break;
