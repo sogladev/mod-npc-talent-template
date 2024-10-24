@@ -1,5 +1,4 @@
 #include "TemplateNPC.h"
-#include "Player.h"
 #include "ScriptedGossip.h"
 #include "Chat.h"
 
