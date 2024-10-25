@@ -922,7 +922,7 @@ public:
 
         LearnWeaponSkills(player);
 
-        player->GetSession()->SendAreaTriggerMessage("Successfuly equipped %s %s template!", playerSpecStr.c_str(), sTemplateNpcMgr->GetClassString(player).c_str());
+        player->GetSession()->SendAreaTriggerMessage("Successfully equipped %s %s template!", playerSpecStr.c_str(), sTemplateNpcMgr->GetClassString(player).c_str());
 
         if (player->getPowerType() == POWER_MANA)
             player->SetPower(POWER_MANA, player->GetMaxPower(POWER_MANA));
