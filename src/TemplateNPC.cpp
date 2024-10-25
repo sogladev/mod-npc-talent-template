@@ -353,25 +353,25 @@ bool sTemplateNPC::OverwriteTemplate(Player* player, std::string& playerSpecStr)
 {
     // Delete old talent and glyph templates before extracting new ones
     CharacterDatabase.Execute("DELETE FROM `template_npc_talents` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-    CharacterDatabase.Execute("DELETE FROM `template_npc_glyphs` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
+    // CharacterDatabase.Execute("DELETE FROM `template_npc_glyphs` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
 
     // Delete old gear templates before extracting new ones
     if (player->getRace() == RACE_HUMAN)
     {
         CharacterDatabase.Execute("DELETE FROM `template_npc_human` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-        player->GetSession()->SendAreaTriggerMessage("Template successfuly created!");
+        player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
         return false;
     }
     else if (player->GetTeamId() == TEAM_ALLIANCE && player->getRace() != RACE_HUMAN)
     {
-        CharacterDatabase.Execute("DELETE FROM `template_npc_alliance` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-        player->GetSession()->SendAreaTriggerMessage("Template successfuly created!");
+        // CharacterDatabase.Execute("DELETE FROM `template_npc_alliance` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
+        player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
         return false;
     }
     else if (player->GetTeamId() == TEAM_HORDE)
     {
         CharacterDatabase.Execute("DELETE FROM `template_npc_horde` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-        player->GetSession()->SendAreaTriggerMessage("Template successfuly created!");
+        player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
         return false;
     }
     return true;
@@ -403,7 +403,7 @@ void sTemplateNPC::ExtractGearTemplateToDB(Player* player, std::string& playerSp
 
 void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, std::string& playerSpecStr)
 {
-    QueryResult result = CharacterDatabase.Query("SELECT `spell` FROM `character_talent` WHERE `guid`={} AND `talentGroup`={}", player->GetGUID().GetCounter(), player->GetActiveSpecMask());
+    QueryResult result = CharacterDatabase.Query("SELECT `spell` FROM `character_talent` WHERE `guid`={} AND `specMask`={}", player->GetGUID().GetCounter(), player->GetActiveSpecMask());
 
     if (!result)
     {
@@ -1167,13 +1167,49 @@ public:
 
     ChatCommandTable GetCommands() const override
     {
+		static ChatCommandTable createMageItemSetTable =
+		{
+            { "fire",  HandleCreateMageFireItemSetCommand,  SEC_ADMINISTRATOR,     Console::No },
+		};
+
+		static ChatCommandTable createItemSetCommandTable =
+		{
+            { "mage",  createMageItemSetTable,  SEC_ADMINISTRATOR,     Console::No },
+		};
+
+        static ChatCommandTable TemplateNPCTable =
+        {
+            { "reload",  HandleReloadTemplateNPCCommand,  SEC_ADMINISTRATOR,     Console::No },
+            { "create",  createItemSetCommandTable,  SEC_ADMINISTRATOR,     Console::No },
+            // {"copy", SEC_ADMINISTRATOR, false, &HandleCopyCommand, "Copies your target's gear onto your character. example: `.template copy`"},
+            // {"save", SEC_ADMINISTRATOR, false, nullptr, "", saveTable},
+        };
 
         static ChatCommandTable commandTable =
-            {
-                {"templatenpc reload", HandleReloadTemplateNPCCommand, SEC_ADMINISTRATOR, Console::No},
-            };
+        {
+            { "template",  TemplateNPCTable},
+        };
+
         return commandTable;
     }
+
+	static bool HandleCreateMageFireItemSetCommand(ChatHandler* handler, const char* args)
+	{
+		Player* player = handler->GetSession()->GetPlayer();
+		if (player->getClass() != CLASS_MAGE)
+		{
+			player->GetSession()->SendAreaTriggerMessage("You're not a mage!");
+			return false;
+		}
+        player->SaveToDB(false, false);
+		sTemplateNpcMgr->sTalentsSpec = "Fire";
+		sTemplateNpcMgr->OverwriteTemplate(player, sTemplateNpcMgr->sTalentsSpec);
+		// sTemplateNpcMgr->ExtractGearTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
+		sTemplateNpcMgr->ExtractTalentTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
+		// sTemplateNpcMgr->ExtractGlyphsTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
+		return true;
+	}
+
 
     static bool HandleReloadTemplateNPCCommand(ChatHandler *handler)
     {
