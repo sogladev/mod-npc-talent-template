@@ -14,7 +14,7 @@ INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`,
 
 DELETE FROM `npc_text` WHERE `ID` = @ENTRY;
 INSERT INTO `npc_text` (`ID`, `text0_0`, `text0_1`) VALUES
-(@ENTRY, 'Here you can select a character template which will gear up, gem up, set talent specialization, and set glyphs for your character instantly.\r\n\r\nSelect your spec:', 'Here you can select a character template which will gear up, gem up, set talent specialization, and set glyphs for your character instantly.\r\n\r\nSelect your spec:');
+(@ENTRY, 'Here you can select a character template which will gear up, gem up, set talent specialization, and set glyphs for your character instantly.', 'Here you can select a character template which will gear up, gem up, set talent specialization, and set glyphs for your character instantly.');
 
 DELETE FROM `creature_template_movement` WHERE `CreatureId` = @ENTRY;
 INSERT INTO `creature_template_movement` (`CreatureId`, `Ground`, `Swim`, `Flight`, `Rooted`, `Chase`, `Random`, `InteractionPauseTimer`) VALUES
