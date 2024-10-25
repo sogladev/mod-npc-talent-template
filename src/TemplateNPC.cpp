@@ -353,7 +353,7 @@ bool sTemplateNPC::OverwriteTemplate(Player* player, std::string& playerSpecStr)
 {
     // Delete old talent and glyph templates before extracting new ones
     CharacterDatabase.Execute("DELETE FROM `template_npc_talents` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-    // CharacterDatabase.Execute("DELETE FROM `template_npc_glyphs` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
+    CharacterDatabase.Execute("DELETE FROM `template_npc_glyphs` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
 
     // Delete old gear templates before extracting new ones
     if (player->getRace() == RACE_HUMAN)
@@ -364,7 +364,7 @@ bool sTemplateNPC::OverwriteTemplate(Player* player, std::string& playerSpecStr)
     }
     else if (player->GetTeamId() == TEAM_ALLIANCE && player->getRace() != RACE_HUMAN)
     {
-        // CharacterDatabase.Execute("DELETE FROM `template_npc_alliance` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
+        CharacterDatabase.Execute("DELETE FROM `template_npc_alliance` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
         player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
         return false;
     }
@@ -403,7 +403,7 @@ void sTemplateNPC::ExtractGearTemplateToDB(Player* player, std::string& playerSp
 
 void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, std::string& playerSpecStr)
 {
-    QueryResult result = CharacterDatabase.Query("SELECT `spell` FROM `character_talent` WHERE `guid`={} AND `specMask`={}", player->GetGUID().GetCounter(), player->GetActiveSpecMask());
+    QueryResult result = CharacterDatabase.Query("SELECT `spell` FROM `character_talent` WHERE `guid`={} AND `specMask`&{}", player->GetGUID().GetCounter(), player->GetActiveSpecMask());
 
     if (!result)
     {
@@ -1167,33 +1167,33 @@ public:
 
     ChatCommandTable GetCommands() const override
     {
-		static ChatCommandTable createMageItemSetTable =
+		static ChatCommandTable createMageFireItemSetCommandTable =
 		{
             { "fire",  HandleCreateMageFireItemSetCommand,  SEC_ADMINISTRATOR,     Console::No },
 		};
 
 		static ChatCommandTable createItemSetCommandTable =
 		{
-            { "mage",  createMageItemSetTable,  SEC_ADMINISTRATOR,     Console::No },
+            { "mage",  createMageFireItemSetCommandTable},
 		};
 
-        static ChatCommandTable TemplateNPCTable =
+        static ChatCommandTable templateCommandTable =
         {
             { "reload",  HandleReloadTemplateNPCCommand,  SEC_ADMINISTRATOR,     Console::No },
-            { "create",  createItemSetCommandTable,  SEC_ADMINISTRATOR,     Console::No },
+            { "create",  createItemSetCommandTable},
             // {"copy", SEC_ADMINISTRATOR, false, &HandleCopyCommand, "Copies your target's gear onto your character. example: `.template copy`"},
             // {"save", SEC_ADMINISTRATOR, false, nullptr, "", saveTable},
         };
 
         static ChatCommandTable commandTable =
         {
-            { "template",  TemplateNPCTable},
+            { "templatenpc",  templateCommandTable},
         };
 
         return commandTable;
     }
 
-	static bool HandleCreateMageFireItemSetCommand(ChatHandler* handler, const char* args)
+	static bool HandleCreateMageFireItemSetCommand(ChatHandler *handler)
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 		if (player->getClass() != CLASS_MAGE)
@@ -1204,9 +1204,9 @@ public:
         player->SaveToDB(false, false);
 		sTemplateNpcMgr->sTalentsSpec = "Fire";
 		sTemplateNpcMgr->OverwriteTemplate(player, sTemplateNpcMgr->sTalentsSpec);
-		// sTemplateNpcMgr->ExtractGearTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
+		sTemplateNpcMgr->ExtractGearTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
 		sTemplateNpcMgr->ExtractTalentTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
-		// sTemplateNpcMgr->ExtractGlyphsTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
+		sTemplateNpcMgr->ExtractGlyphsTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
 		return true;
 	}
 
