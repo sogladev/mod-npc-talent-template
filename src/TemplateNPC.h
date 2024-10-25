@@ -8,6 +8,7 @@
 #include "ScriptMgr.h"
 #include "Creature.h"
 #include "ObjectMgr.h"
+#include <unordered_set>
 
 #define SPELL_Amani_War_Bear 43688
 #define SPELL_Artisan_Riding 34091
