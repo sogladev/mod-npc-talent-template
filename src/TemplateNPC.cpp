@@ -1176,7 +1176,6 @@ public:
         case 30:
             sTemplateNpcMgr->RemoveAllGlyphs(player);
             player->GetSession()->SendAreaTriggerMessage("Your glyphs have been removed.");
-            // GossipHello(player);
             CloseGossipMenuFor(player);
             break;
 
