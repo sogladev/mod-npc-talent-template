@@ -1,6 +1,5 @@
 #include "TemplateNPC.h"
 #include "Config.h"
-#include "Pet.h"
 #include "ScriptedGossip.h"
 #include "Chat.h"
 
@@ -843,11 +842,15 @@ public:
         if (sTemplateNpcMgr->enableResetTalents || sTemplateNpcMgr->enableRemoveAllGlyphs || sTemplateNpcMgr->enableDestroyEquippedGear)
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
         if (sTemplateNpcMgr->enableResetTalents)
+        {
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\Trade_Engineering:30:30|t|r Reset Talents", GOSSIP_SENDER_MAIN, 31);
+            if (player->getClass() == CLASS_HUNTER)
+                AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_hunter_beasttaming:30:30|t|r Reset Pet Talents", GOSSIP_SENDER_MAIN, 32);
+        }
         if (sTemplateNpcMgr->enableRemoveAllGlyphs)
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\Spell_ChargeNegative:30|t|r Remove all glyphs", GOSSIP_SENDER_MAIN, 30);
         if (sTemplateNpcMgr->enableDestroyEquippedGear)
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_vehicle_launchplayer:30|t|r Destroy my equipped gear", GOSSIP_SENDER_MAIN, 32);
+            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_vehicle_launchplayer:30|t|r Destroy my equipped gear", GOSSIP_SENDER_MAIN, 33);
         SendGossipMenuFor(player, creature->GetEntry(), creature->GetGUID());
         return true;
     }
@@ -1151,20 +1154,19 @@ public:
             break;
 
         case 31:
-        {
-
             player->resetTalents(true);
             player->SendTalentsInfoData(false);
             player->GetSession()->SendAreaTriggerMessage(LANG_RESET_TALENTS);
-            Pet* pet = player->GetPet();
-            Pet::resetTalentsForAllPetsOf(player, pet);
-            if (pet)
-                player->SendTalentsInfoData(true);
             CloseGossipMenuFor(player);
             break;
-        }
 
         case 32:
+            player->ResetPetTalents();
+            player->GetSession()->SendAreaTriggerMessage(LANG_RESET_PET_TALENTS);
+            CloseGossipMenuFor(player);
+            break;
+
+        case 33:
             for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
             {
                 if (Item* haveItemEquipped = player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
