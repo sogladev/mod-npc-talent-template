@@ -584,42 +584,7 @@ void sTemplateNPC::LoadHordeGearContainer()
 
 std::string sTemplateNPC::GetClassString(Player* player)
 {
-    switch (player->getClass())
-    {
-    case CLASS_PRIEST:
-        return "Priest";
-        break;
-    case CLASS_PALADIN:
-        return "Paladin";
-        break;
-    case CLASS_WARRIOR:
-        return "Warrior";
-        break;
-    case CLASS_MAGE:
-        return "Mage";
-        break;
-    case CLASS_WARLOCK:
-        return "Warlock";
-        break;
-    case CLASS_SHAMAN:
-        return "Shaman";
-        break;
-    case CLASS_DRUID:
-        return "Druid";
-        break;
-    case CLASS_HUNTER:
-        return "Hunter";
-        break;
-    case CLASS_ROGUE:
-        return "Rogue";
-        break;
-    case CLASS_DEATH_KNIGHT:
-        return "DeathKnight";
-        break;
-    default:
-        break;
-    }
-    return "Unknown"; // Fix warning, this should never happen
+    return EnumUtils::ToTitle(Classes(player->getClass()));
 }
 
 bool sTemplateNPC::OverwriteTemplate(Player* player, std::string& playerSpecStr)
