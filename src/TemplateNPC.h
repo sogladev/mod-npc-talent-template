@@ -267,6 +267,10 @@ public:
     HumanGearContainer m_HumanGearContainer;
     AllianceGearContainer m_AllianceGearContainer;
     HordeGearContainer m_HordeGearContainer;
+
+    bool enableResetTalents;
+    bool enableRemoveAllGlyphs;
+    bool enableDestroyEquippedGear;
 };
 
 #define sTemplateNpcMgr sTemplateNPC::instance()
