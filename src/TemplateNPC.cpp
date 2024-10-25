@@ -1,6 +1,7 @@
 #include "TemplateNPC.h"
 #include "Config.h"
 #include "ScriptedGossip.h"
+#include "Tokenize.h"
 #include "Chat.h"
 
 void sTemplateNPC::LearnPlateMailSpells(Player *player)
@@ -1151,22 +1152,12 @@ public:
 
     ChatCommandTable GetCommands() const override
     {
-		static ChatCommandTable createMageFireItemSetCommandTable =
-		{
-            { "fire",  HandleCreateMageFireItemSetCommand,  SEC_ADMINISTRATOR,     Console::No },
-		};
-
-		static ChatCommandTable createItemSetCommandTable =
-		{
-            { "mage",  createMageFireItemSetCommandTable},
-		};
-
         static ChatCommandTable templateCommandTable =
         {
-            { "reload",  HandleReloadTemplateNPCCommand,  SEC_ADMINISTRATOR,     Console::No },
-            { "create",  createItemSetCommandTable},
+            { "reload", HandleReloadTemplateNPCCommand, SEC_ADMINISTRATOR, Console::No },
+            { "create", HandleCreateClassSpecItemSetCommand, SEC_ADMINISTRATOR, Console::No },
+            // { "copy", HandleCopyCommand, SEC_ADMINISTRATOR, Console::No },
             // {"copy", SEC_ADMINISTRATOR, false, &HandleCopyCommand, "Copies your target's gear onto your character. example: `.template copy`"},
-            // {"save", SEC_ADMINISTRATOR, false, nullptr, "", saveTable},
         };
 
         static ChatCommandTable commandTable =
@@ -1177,23 +1168,23 @@ public:
         return commandTable;
     }
 
-	static bool HandleCreateMageFireItemSetCommand(ChatHandler *handler)
-	{
+	static bool HandleCreateClassSpecItemSetCommand(ChatHandler *handler, std::string_view name)
+    {
+            handler->PSendSysMessage("Usage: .templatenpc create [name]");
+            handler->PSendSysMessage("example as Hunter: `.templatenpc create Survival`. This command is case-sensitive.");
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
 		Player* player = handler->GetSession()->GetPlayer();
-		if (player->getClass() != CLASS_MAGE)
-		{
-			player->GetSession()->SendAreaTriggerMessage("You're not a mage!");
-			return false;
-		}
         player->SaveToDB(false, false);
-		sTemplateNpcMgr->sTalentsSpec = "Fire";
+        std::string specName { *name };
+		sTemplateNpcMgr->sTalentsSpec = specName;
 		sTemplateNpcMgr->OverwriteTemplate(player, sTemplateNpcMgr->sTalentsSpec);
 		sTemplateNpcMgr->ExtractGearTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
 		sTemplateNpcMgr->ExtractTalentTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
 		sTemplateNpcMgr->ExtractGlyphsTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
 		return true;
 	}
-
 
     static bool HandleReloadTemplateNPCCommand(ChatHandler *handler)
     {
