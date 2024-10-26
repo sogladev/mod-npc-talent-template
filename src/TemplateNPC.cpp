@@ -93,61 +93,20 @@ void sTemplateNPC::LearnTemplateGlyphs(Player* player)
 
 void sTemplateNPC::EquipTemplateGear(Player* player)
 {
-    if (player->getRace() == RACE_HUMAN)
-    {
-        // reverse sort so we equip items from trinket to helm so we avoid issue with meta gems
-        std::sort(m_HumanGearContainer.begin(), m_HumanGearContainer.end(), std::greater<HumanGearTemplate*>());
+    // reverse sort so we equip items from trinket to helm so we avoid issue with meta gems
+    std::sort(m_GearContainer.begin(), m_GearContainer.end(), std::greater<GearTemplate*>());
 
-        for (HumanGearContainer::const_iterator itr = m_HumanGearContainer.begin(); itr != m_HumanGearContainer.end(); ++itr)
-        {
-            if ((*itr)->playerClass == GetClassString(player).c_str() && (*itr)->playerSpec == sTalentsSpec)
-            {
-                player->EquipNewItem((*itr)->pos, (*itr)->itemEntry, true); // Equip the item and apply enchants and gems
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), PERM_ENCHANTMENT_SLOT, (*itr)->enchant);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), BONUS_ENCHANTMENT_SLOT, (*itr)->bonusEnchant);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), PRISMATIC_ENCHANTMENT_SLOT, (*itr)->prismaticEnchant);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT_2, (*itr)->socket2);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT_3, (*itr)->socket3);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT, (*itr)->socket1);
-            }
-        }
-    }
-    else if (player->GetTeamId() == TEAM_ALLIANCE && player->getRace() != RACE_HUMAN)
+    for (GearContainer::const_iterator itr = m_GearContainer.begin(); itr != m_GearContainer.end(); ++itr)
     {
-        // reverse sort so we equip items from trinket to helm so we avoid issue with meta gems
-        std::sort(m_AllianceGearContainer.begin(), m_AllianceGearContainer.end(), std::greater<AllianceGearTemplate *>());
-
-        for (AllianceGearContainer::const_iterator itr = m_AllianceGearContainer.begin(); itr != m_AllianceGearContainer.end(); ++itr)
+        if ((*itr)->playerClass == GetClassString(player).c_str() && (*itr)->playerSpec == sTalentsSpec && (*itr)->playerRaceMask & player->getRaceMask())
         {
-            if ((*itr)->playerClass == GetClassString(player).c_str() && (*itr)->playerSpec == sTalentsSpec)
-            {
-                player->EquipNewItem((*itr)->pos, (*itr)->itemEntry, true); // Equip the item and apply enchants and gems
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), PERM_ENCHANTMENT_SLOT, (*itr)->enchant);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), BONUS_ENCHANTMENT_SLOT, (*itr)->bonusEnchant);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), PRISMATIC_ENCHANTMENT_SLOT, (*itr)->prismaticEnchant);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT_2, (*itr)->socket2);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT_3, (*itr)->socket3);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT, (*itr)->socket1);
-            }
-        }
-    }
-    else if (player->GetTeamId() == TEAM_HORDE)
-    {
-        // reverse sort so we equip items from trinket to helm so we avoid issue with meta gems
-        std::sort(m_HordeGearContainer.begin(), m_HordeGearContainer.end(), std::greater<HordeGearTemplate *>());
-
-        for (HordeGearContainer::const_iterator itr = m_HordeGearContainer.begin(); itr != m_HordeGearContainer.end(); ++itr)
-        {
-            if ((*itr)->playerClass == GetClassString(player).c_str() && (*itr)->playerSpec == sTalentsSpec)
-            {
-                player->EquipNewItem((*itr)->pos, (*itr)->itemEntry, true); // Equip the item and apply enchants and gems
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), PERM_ENCHANTMENT_SLOT, (*itr)->enchant);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), BONUS_ENCHANTMENT_SLOT, (*itr)->bonusEnchant);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), PRISMATIC_ENCHANTMENT_SLOT, (*itr)->prismaticEnchant);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT_2, (*itr)->socket2);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT_3, (*itr)->socket3);
-                ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT, (*itr)->socket1);
-            }
+            player->EquipNewItem((*itr)->pos, (*itr)->itemEntry, true); // Equip the item and apply enchants and gems
+            ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), PERM_ENCHANTMENT_SLOT, (*itr)->enchant);
+            ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), BONUS_ENCHANTMENT_SLOT, (*itr)->bonusEnchant);
+            ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), PRISMATIC_ENCHANTMENT_SLOT, (*itr)->prismaticEnchant);
+            ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT_2, (*itr)->socket2);
+            ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT_3, (*itr)->socket3);
+            ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT, (*itr)->socket1);
         }
     }
 }
@@ -222,21 +181,21 @@ void sTemplateNPC::LoadGlyphsContainer()
     LOG_INFO("module", ">> TEMPLATE NPC: Loaded {} glyph templates in {} ms.", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
-void sTemplateNPC::LoadHumanGearContainer()
+void sTemplateNPC::LoadGearContainer()
 {
-    for (HumanGearContainer::const_iterator itr = m_HumanGearContainer.begin(); itr != m_HumanGearContainer.end(); ++itr)
+    for (GearContainer::const_iterator itr = m_GearContainer.begin(); itr != m_GearContainer.end(); ++itr)
         delete* itr;
 
-    m_HumanGearContainer.clear();
+    m_GearContainer.clear();
 
-    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant` FROM `template_npc_human`");
+    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `playerRaceMask`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant` FROM `template_npc_gear`");
 
     uint32 oldMSTime = getMSTime();
     uint32 count = 0;
 
     if (!result)
     {
-        LOG_INFO("module", ">> TEMPLATE NPC: Loaded 0 gear templates. DB table `template_npc_human` is empty!");
+        LOG_INFO("module", ">> TEMPLATE NPC: Loaded 0 gear templates. DB table `template_npc_gear` is empty!");
         return;
     }
 
@@ -244,105 +203,24 @@ void sTemplateNPC::LoadHumanGearContainer()
     {
         Field* fields = result->Fetch();
 
-        HumanGearTemplate* pItem = new HumanGearTemplate;
+        GearTemplate* pItem = new GearTemplate;
 
         pItem->playerClass = fields[0].Get<std::string>();
         pItem->playerSpec = fields[1].Get<std::string>();
-        pItem->pos = fields[2].Get<uint8>();
-        pItem->itemEntry = fields[3].Get<uint32>();
-        pItem->enchant = fields[4].Get<uint32>();
-        pItem->socket1 = fields[5].Get<uint32>();
-        pItem->socket2 = fields[6].Get<uint32>();
-        pItem->socket3 = fields[7].Get<uint32>();
-        pItem->bonusEnchant = fields[8].Get<uint32>();
-        pItem->prismaticEnchant = fields[9].Get<uint32>();
+        pItem->playerRaceMask = fields[2].Get<uint32>();
+        pItem->pos = fields[3].Get<uint8>();
+        pItem->itemEntry = fields[4].Get<uint32>();
+        pItem->enchant = fields[5].Get<uint32>();
+        pItem->socket1 = fields[6].Get<uint32>();
+        pItem->socket2 = fields[7].Get<uint32>();
+        pItem->socket3 = fields[8].Get<uint32>();
+        pItem->bonusEnchant = fields[9].Get<uint32>();
+        pItem->prismaticEnchant = fields[10].Get<uint32>();
 
-        m_HumanGearContainer.push_back(pItem);
+        m_GearContainer.push_back(pItem);
         ++count;
     } while (result->NextRow());
-    LOG_INFO("module", ">> TEMPLATE NPC: Loaded {} gear templates for Humans in {} ms.", count, GetMSTimeDiffToNow(oldMSTime));
-}
-
-void sTemplateNPC::LoadAllianceGearContainer()
-{
-    for (AllianceGearContainer::const_iterator itr = m_AllianceGearContainer.begin(); itr != m_AllianceGearContainer.end(); ++itr)
-        delete* itr;
-
-    m_AllianceGearContainer.clear();
-
-    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant` FROM `template_npc_alliance`");
-
-    uint32 oldMSTime = getMSTime();
-    uint32 count = 0;
-
-    if (!result)
-    {
-        LOG_INFO("module", ">> TEMPLATE NPC: Loaded 0 gear templates. DB table `template_npc_alliance` is empty!");
-        return;
-    }
-
-    do
-    {
-        Field* fields = result->Fetch();
-
-        AllianceGearTemplate* pItem = new AllianceGearTemplate;
-
-        pItem->playerClass = fields[0].Get<std::string>();
-        pItem->playerSpec = fields[1].Get<std::string>();
-        pItem->pos = fields[2].Get<uint8>();
-        pItem->itemEntry = fields[3].Get<uint32>();
-        pItem->enchant = fields[4].Get<uint32>();
-        pItem->socket1 = fields[5].Get<uint32>();
-        pItem->socket2 = fields[6].Get<uint32>();
-        pItem->socket3 = fields[7].Get<uint32>();
-        pItem->bonusEnchant = fields[8].Get<uint32>();
-        pItem->prismaticEnchant = fields[9].Get<uint32>();
-
-        m_AllianceGearContainer.push_back(pItem);
-        ++count;
-    } while (result->NextRow());
-    LOG_INFO("module", ">> TEMPLATE NPC: Loaded {} gear templates for Alliances in {} ms.", count, GetMSTimeDiffToNow(oldMSTime));
-}
-
-void sTemplateNPC::LoadHordeGearContainer()
-{
-    for (HordeGearContainer::const_iterator itr = m_HordeGearContainer.begin(); itr != m_HordeGearContainer.end(); ++itr)
-        delete* itr;
-
-    m_HordeGearContainer.clear();
-
-    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant` FROM `template_npc_horde`");
-
-    uint32 oldMSTime = getMSTime();
-    uint32 count = 0;
-
-    if (!result)
-    {
-        LOG_INFO("module", ">> TEMPLATE NPC: Loaded 0 gear templates. DB table `template_npc_horde` is empty!");
-        return;
-    }
-
-    do
-    {
-        Field* fields = result->Fetch();
-
-        HordeGearTemplate *pItem = new HordeGearTemplate;
-
-        pItem->playerClass = fields[0].Get<std::string>();
-        pItem->playerSpec = fields[1].Get<std::string>();
-        pItem->pos = fields[2].Get<uint8>();
-        pItem->itemEntry = fields[3].Get<uint32>();
-        pItem->enchant = fields[4].Get<uint32>();
-        pItem->socket1 = fields[5].Get<uint32>();
-        pItem->socket2 = fields[6].Get<uint32>();
-        pItem->socket3 = fields[7].Get<uint32>();
-        pItem->bonusEnchant = fields[8].Get<uint32>();
-        pItem->prismaticEnchant = fields[9].Get<uint32>();
-
-        m_HordeGearContainer.push_back(pItem);
-        ++count;
-    } while (result->NextRow());
-    LOG_INFO("module", ">> TEMPLATE NPC: Loaded {} gear templates for Hordes in {} ms.", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("module", ">> TEMPLATE NPC: Loaded {} gear templates in {} ms.", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
 std::string sTemplateNPC::GetClassString(Player* player)
@@ -352,30 +230,12 @@ std::string sTemplateNPC::GetClassString(Player* player)
 
 bool sTemplateNPC::OverwriteTemplate(Player* player, std::string& playerSpecStr)
 {
-    // Delete old talent and glyph templates before extracting new ones
+    // Delete old talent, glyph, and gear templates before extracting new ones
     CharacterDatabase.Execute("DELETE FROM `template_npc_talents` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
     CharacterDatabase.Execute("DELETE FROM `template_npc_glyphs` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-
-    // Delete old gear templates before extracting new ones
-    if (player->getRace() == RACE_HUMAN)
-    {
-        CharacterDatabase.Execute("DELETE FROM `template_npc_human` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-        player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
-        return false;
-    }
-    else if (player->GetTeamId() == TEAM_ALLIANCE && player->getRace() != RACE_HUMAN)
-    {
-        CharacterDatabase.Execute("DELETE FROM `template_npc_alliance` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-        player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
-        return false;
-    }
-    else if (player->GetTeamId() == TEAM_HORDE)
-    {
-        CharacterDatabase.Execute("DELETE FROM `template_npc_horde` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-        player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
-        return false;
-    }
-    return true;
+    CharacterDatabase.Execute("DELETE FROM `template_npc_gear` WHERE `playerClass`='{}' AND `playerSpec`='{}' AND `playerRaceMask` & {}", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask());
+    player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
+    return false;
 }
 
 void sTemplateNPC::ExtractGearTemplateToDB(Player* player, std::string& playerSpecStr)
@@ -386,18 +246,7 @@ void sTemplateNPC::ExtractGearTemplateToDB(Player* player, std::string& playerSp
 
         if (equippedItem)
         {
-            if (player->getRace() == RACE_HUMAN)
-            {
-                CharacterDatabase.Execute("INSERT INTO `template_npc_human` (`playerClass`, `playerSpec`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant`) VALUES ('{}', '{}', {}, {}, {}, {}, {}, {}, {}, {});", GetClassString(player).c_str(), playerSpecStr.c_str(), equippedItem->GetSlot(), equippedItem->GetEntry(), equippedItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_2), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_3), equippedItem->GetEnchantmentId(BONUS_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT));
-            }
-            else if (player->GetTeamId() == TEAM_ALLIANCE && player->getRace() != RACE_HUMAN)
-            {
-                CharacterDatabase.Execute("INSERT INTO `template_npc_alliance` (`playerClass`, `playerSpec`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant`) VALUES ('{}', '{}', {}, {}, {}, {}, {}, {}, {}, {});", GetClassString(player).c_str(), playerSpecStr.c_str(), equippedItem->GetSlot(), equippedItem->GetEntry(), equippedItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_2), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_3), equippedItem->GetEnchantmentId(BONUS_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT));
-            }
-            else if (player->GetTeamId() == TEAM_HORDE)
-            {
-                CharacterDatabase.Execute("INSERT INTO `template_npc_horde` (`playerClass`, `playerSpec`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant`) VALUES ('{}', '{}', {}, {}, {}, {}, {}, {}, {}, {});", GetClassString(player).c_str(), playerSpecStr.c_str(), equippedItem->GetSlot(), equippedItem->GetEntry(), equippedItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_2), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_3), equippedItem->GetEnchantmentId(BONUS_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT));
-            }
+            CharacterDatabase.Execute("INSERT INTO `template_npc_gear` (`playerClass`, `playerSpec`, `playerRaceMask`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant`) VALUES ('{}', '{}', {}, {}, {}, {}, {}, {}, {}, {}, {});", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask(), equippedItem->GetSlot(), equippedItem->GetEntry(), equippedItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_2), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_3), equippedItem->GetEnchantmentId(BONUS_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT));
         }
     }
 }
@@ -479,27 +328,10 @@ void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, std::string& player
 
 bool sTemplateNPC::CanEquipTemplate(Player* player, std::string& playerSpecStr)
 {
-    if (player->getRace() == RACE_HUMAN)
-    {
-        QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec` FROM `template_npc_human` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
+    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `playerRaceMask` FROM `template_npc_gear` WHERE `playerClass`='{}' AND `playerSpec`='{}' AND `playerRaceMask`&{}", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask());
 
-        if (!result)
-            return false;
-    }
-    else if (player->GetTeamId() == TEAM_ALLIANCE && player->getRace() != RACE_HUMAN)
-    {
-        QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec` FROM `template_npc_alliance` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-
-        if (!result)
-            return false;
-    }
-    else if (player->GetTeamId() == TEAM_HORDE)
-    {
-        QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec` FROM `template_npc_horde` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-
-        if (!result)
-            return false;
-    }
+    if (!result)
+        return false;
     return true;
 }
 
@@ -1170,15 +1002,9 @@ public:
 
 	static bool HandleCreateClassSpecItemSetCommand(ChatHandler *handler, std::string_view name)
     {
-            handler->PSendSysMessage("Usage: .templatenpc create [name]");
-            handler->PSendSysMessage("example as Hunter: `.templatenpc create Survival`. This command is case-sensitive.");
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
 		Player* player = handler->GetSession()->GetPlayer();
         player->SaveToDB(false, false);
-        std::string specName { *name };
-		sTemplateNpcMgr->sTalentsSpec = specName;
+		sTemplateNpcMgr->sTalentsSpec = name;
 		sTemplateNpcMgr->OverwriteTemplate(player, sTemplateNpcMgr->sTalentsSpec);
 		sTemplateNpcMgr->ExtractGearTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
 		sTemplateNpcMgr->ExtractTalentTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
@@ -1191,9 +1017,7 @@ public:
         LOG_INFO("module", "Reloading templates for Template NPC table...");
         sTemplateNpcMgr->LoadTalentsContainer();
         sTemplateNpcMgr->LoadGlyphsContainer();
-        sTemplateNpcMgr->LoadHumanGearContainer();
-        sTemplateNpcMgr->LoadAllianceGearContainer();
-        sTemplateNpcMgr->LoadHordeGearContainer();
+        sTemplateNpcMgr->LoadGearContainer();
         handler->SendGlobalGMSysMessage("Template NPC templates reloaded.");
         return true;
     }
@@ -1223,16 +1047,9 @@ public:
         sTemplateNpcMgr->LoadGlyphsContainer();
 
         // Load templates for Template NPC #3
-        LOG_INFO("module", "Loading Template Gear for Humans...");
-        sTemplateNpcMgr->LoadHumanGearContainer();
+        LOG_INFO("module", "Loading Template Gear...");
+        sTemplateNpcMgr->LoadGearContainer();
 
-        // Load templates for Template NPC #4
-        LOG_INFO("module", "Loading Template Gear for Alliances...");
-        sTemplateNpcMgr->LoadAllianceGearContainer();
-
-        // Load templates for Template NPC #5
-        LOG_INFO("module", "Loading Template Gear for Hordes...");
-        sTemplateNpcMgr->LoadHordeGearContainer();
         LOG_INFO("module", "== END TEMPLATE NPC ==");
     }
 };

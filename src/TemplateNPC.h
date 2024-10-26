@@ -8,7 +8,6 @@
 #include "ScriptMgr.h"
 #include "Creature.h"
 #include "ObjectMgr.h"
-#include <unordered_set>
 
 #define SPELL_Amani_War_Bear 43688
 #define SPELL_Artisan_Riding 34091
@@ -179,10 +178,11 @@ struct GlyphTemplate
     uint32 glyph;
 };
 
-struct HumanGearTemplate
+struct GearTemplate
 {
     std::string playerClass;
     std::string playerSpec;
+    uint32 playerRaceMask;
     uint8 pos;
     uint32 itemEntry;
     uint32 enchant;
@@ -193,38 +193,7 @@ struct HumanGearTemplate
     uint32 prismaticEnchant;
 };
 
-struct AllianceGearTemplate
-{
-    std::string playerClass;
-    std::string playerSpec;
-    uint8 pos;
-    uint32 itemEntry;
-    uint32 enchant;
-    uint32 socket1;
-    uint32 socket2;
-    uint32 socket3;
-    uint32 bonusEnchant;
-    uint32 prismaticEnchant;
-};
-
-struct HordeGearTemplate
-{
-    std::string playerClass;
-    std::string playerSpec;
-    uint8 pos;
-    uint32 itemEntry;
-    uint32 enchant;
-    uint32 socket1;
-    uint32 socket2;
-    uint32 socket3;
-    uint32 bonusEnchant;
-    uint32 prismaticEnchant;
-};
-
-typedef std::vector<HumanGearTemplate*> HumanGearContainer;
-typedef std::vector<AllianceGearTemplate*> AllianceGearContainer;
-typedef std::vector<HordeGearTemplate*> HordeGearContainer;
-
+typedef std::vector<GearTemplate*> GearContainer;
 typedef std::vector<TalentTemplate*> TalentContainer;
 typedef std::vector<GlyphTemplate*> GlyphContainer;
 
@@ -239,9 +208,7 @@ public:
     void LoadTalentsContainer();
     void LoadGlyphsContainer();
 
-    void LoadHumanGearContainer();
-    void LoadAllianceGearContainer();
-    void LoadHordeGearContainer();
+    void LoadGearContainer();
 
     void ApplyGlyph(Player* player, uint8 slot, uint32 glyphID);
     void RemoveAllGlyphs(Player* player);
@@ -265,9 +232,7 @@ public:
     GlyphContainer m_GlyphContainer;
     TalentContainer m_TalentContainer;
 
-    HumanGearContainer m_HumanGearContainer;
-    AllianceGearContainer m_AllianceGearContainer;
-    HordeGearContainer m_HordeGearContainer;
+    GearContainer m_GearContainer;
 
     bool enableResetTalents;
     bool enableRemoveAllGlyphs;
