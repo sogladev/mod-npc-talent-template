@@ -1,4 +1,8 @@
 -- DB: characters
+-- TODO
+/* Integer display width is deprecated and will be removed in a future release. */
+/* 'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous. */
+
 CREATE TABLE IF NOT EXISTS `template_npc_gear` (
   `playerClass` varchar(50) NOT NULL,
   `playerSpec` varchar(50) NOT NULL,
@@ -27,6 +31,112 @@ CREATE TABLE IF NOT EXISTS `template_npc_glyphs` (
   `slot` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `glyph` smallint(5) unsigned NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Templates';
+
+
+CREATE TABLE IF NOT EXISTS `template_npc_index` (
+  `playerClass` varchar(50) NOT NULL,
+  `playerSpec` varchar(50) NOT NULL,
+  `gossipAction` int(10) unsigned NOT NULL DEFAULT '0',
+  `gossipText` varchar(200) NOT NULL,
+  `gearMask` int(10) unsigned NOT NULL DEFAULT '0',
+  `minLevel` int(10) unsigned NOT NULL DEFAULT '0',
+  `maxLevel` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Templates';
+
+/*!40000 ALTER TABLE `template_npc_index` DISABLE KEYS */;
+SET @ACTION = 1;
+INSERT INTO `template_npc_index` (`playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel`) VALUES
+('Mage', 'Arcane', @ACTION+000, '|cff00ff00|TInterface\\icons\\spell_holy_magicalsentry:30|t|r Use Arcane Spec', 3, 80, 80),
+('Mage', 'Fire', @ACTION+001, '|cff00ff00|TInterface\\icons\\spell_fire_flamebolt:30|t|r Use Fire Spec', 3, 80, 80),
+('Mage', 'Frost', @ACTION+002, '|cff00ff00|TInterface\\icons\\spell_frost_frostbolt02:30|t|r Use Frost Spec', 3, 80, 80),
+('Mage', 'Arcane', @ACTION+003, '|cff00ff00|TInterface\\icons\\spell_holy_magicalsentry:30|t|r Use Arcane Spec (Talents Only)', 2, 80, 80),
+('Mage', 'Fire', @ACTION+004, '|cff00ff00|TInterface\\icons\\spell_fire_flamebolt:30|t|r Use Fire Spec (Talents Only)', 2, 80, 80),
+('Mage', 'Frost', @ACTION+005, '|cff00ff00|TInterface\\icons\\spell_frost_frostbolt02:30|t|r Use Frost Spec (Talents Only)', 2, 80, 80);
+        /* case CLASS_PRIEST:
+('Priest, 'Fire', "|cff00ff00|TInterface\\icons\\spell_holy_wordfortitude:30|t|r Use Discipline Spec", 0, 80, 80),
+('Priest, 'Fire', "|cff00ff00|TInterface\\icons\\spell_holy_holybolt:30|t|r Use Holy Spec", 1, 80, 80),
+('Priest, 'Fire', "|cff00ff00|TInterface\\icons\\spell_shadow_shadowwordpain:30|t|r Use Shadow Spec", 2, 80, 80),
+('Priest, 'Fire', "----------------------------------------------", 5000, 80, 80),
+('Priest, 'Fire', "|cff00ff00|TInterface\\icons\\spell_holy_wordfortitude:30|t|r Use Discipline Spec (Talents Only)", 100, 80, 80),
+('Priest, 'Fire', "|cff00ff00|TInterface\\icons\\spell_holy_holybolt:30|t|r Use Holy spec (Talents only)", 101, 80, 80),
+('Priest, 'Fire', "|cff00ff00|TInterface\\icons\\spell_shadow_shadowwordpain:30|t|r Use Shadow spec (Talents only)", 102, 80, 80),
+            break;
+        case CLASS_PALADIN:
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_holy_holybolt:30|t|r Use Holy Spec", 3, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_holy_devotionaura:30|t|r Use Protection Spec", 4, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_holy_auraoflight:30|t|r Use Retribution Spec", 5, 80, 80),
+('Mage, 'Fire', "----------------------------------------------", 5000, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_holy_holybolt:30|t|r Use Holy Spec (Talents Only)", 103, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_holy_devotionaura:30|t|r Use Protection Spec (Talents Only)", 104, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_holy_auraoflight:30|t|r Use Retribution Spec (Talents Only)", 105, 80, 80),
+            break;
+        case CLASS_WARRIOR:
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_warrior_innerrage:30|t|r Use Fury Spec", 6, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_rogue_eviscerate:30|t|r Use Arms Spec", 7, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_warrior_defensivestance:30|t|r Use Protection Spec", 8, 80, 80),
+('Mage, 'Fire', "----------------------------------------------", 5000, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_warrior_innerrage:30|t|r Use Fury Spec (Talents Only)", 106, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_rogue_eviscerate:30|t|r Use Arms Spec (Talents Only)", 107, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_warrior_defensivestance:30|t|r Use Protection Spec (Talents Only)", 108, 80, 80),
+            break;
+        case CLASS_MAGE:
+        case CLASS_WARLOCK:
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_shadow_deathcoil:30|t|r Use Affliction Spec", 12, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_shadow_metamorphosis:30|t|r Use Demonology Spec", 13, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_shadow_rainoffire:30|t|r Use Destruction Spec", 14, 80, 80),
+('Mage, 'Fire', "----------------------------------------------", 5000, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_shadow_deathcoil:30|t|r Use Affliction Spec (Talents Only)", 112, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_shadow_metamorphosis:30|t|r Use Demonology Spec (Talents Only)", 113, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_shadow_rainoffire:30|t|r Use Destruction Spec (Talents Only)", 114, 80, 80),
+            break;
+        case CLASS_SHAMAN:
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_nature_lightning:30|t|r Use Elemental Spec", 15, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_nature_lightningshield:30|t|r Use Enhancement Spec", 16, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_nature_magicimmunity:30|t|r Use Restoration Spec", 17, 80, 80),
+('Mage, 'Fire', "----------------------------------------------", 5000, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_nature_lightning:30|t|r Use Elemental Spec (Talents Only)", 115, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_nature_lightningshield:30|t|r Use Enhancement Spec (Talents Only)", 116, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_nature_magicimmunity:30|t|r Use Restoration Spec (Talents Only)", 117, 80, 80),
+            break;
+        case CLASS_DRUID:
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_nature_starfall:30|t|r Use Balance Spec", 18, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_racial_bearform:30|t|r Use Feral Spec", 19, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_nature_healingtouch:30|t|r Use Restoration Spec", 20, 80, 80),
+('Mage, 'Fire', "----------------------------------------------", 5000, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_nature_starfall:30|t|r Use Balance Spec (Talents Only)", 118, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_racial_bearform:30|t|r Use Feral Spec (Talents Only)", 119, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_nature_healingtouch:30|t|r Use Restoration Spec (Talents Only)", 120, 80, 80),
+            break;
+        case CLASS_HUNTER:
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_marksmanship:30|t|r Use Marksmanship Spec", 21, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_hunter_beasttaming:30|t|r Use Beastmastery Spec", 22, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_Hunter_swiftstrike:30|t|r Use Survival Spec", 23, 80, 80),
+('Mage, 'Fire', "----------------------------------------------", 5000, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_marksmanship:30|t|r Use Marksmanship Spec (Talents Only)", 121, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_hunter_beasttaming:30|t|r Use Beastmastery Spec (Talents Only)", 122, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_Hunter_swiftstrike:30|t|r Use Survival Spec (Talents Only)", 123, 80, 80),
+            break;
+        case CLASS_ROGUE:
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_rogue_eviscerate:30|t|r Use Assasination Spec", 24, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_backstab:30|t|r Use Combat Spec", 25, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_stealth:30|t|r Use Subtlety Spec", 26, 80, 80),
+('Mage, 'Fire', "----------------------------------------------", 5000, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_rogue_eviscerate:30|t|r Use Assasination Spec (Talents Only)", 124, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_backstab:30|t|r Use Combat Spec (Talents Only)", 125, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\ability_stealth:30|t|r Use Subtlety Spec (Talents Only)", 126, 80, 80),
+            break;
+        case CLASS_DEATH_KNIGHT:
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_deathknight_bloodpresence:30|t|r Use Blood Spec", 27, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_deathknight_frostpresence:30|t|r Use Frost Spec", 28, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_deathknight_unholypresence:30|t|r Use Unholy Spec", 29, 80, 80),
+('Mage, 'Fire', "----------------------------------------------", 5000, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_deathknight_bloodpresence:30|t|r Use Blood Spec (Talents Only)", 127, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_deathknight_frostpresence:30|t|r Use Frost Spec (Talents Only)", 128, 80, 80),
+('Mage, 'Fire', "|cff00ff00|TInterface\\icons\\spell_deathknight_unholypresence:30|t|r Use Unholy Spec (Talents Only)", 129, 80, 80),
+            break;
+        } */
+/*!40000 ALTER TABLE `template_npc_index` ENABLE KEYS */;
+
 
 SET @RACEMASK_HUMAN = 1;
 SET @RACEMASK_A = 1100; -- Alliance without human

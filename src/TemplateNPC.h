@@ -193,9 +193,21 @@ struct GearTemplate
     uint32 prismaticEnchant;
 };
 
-typedef std::vector<GearTemplate*> GearContainer;
+struct IndexTemplate
+{
+    std::string playerClass;
+    std::string playerSpec;
+    uint32 gossipAction;
+    std::string gossipText;
+    uint32 gearMask;
+    uint32 minLevel;
+    uint32 maxLevel;
+};
+
 typedef std::vector<TalentTemplate*> TalentContainer;
 typedef std::vector<GlyphTemplate*> GlyphContainer;
+typedef std::vector<GearTemplate*> GearContainer;
+typedef std::vector<IndexTemplate*> IndexContainer;
 
 class sTemplateNPC
 {
@@ -207,8 +219,8 @@ public:
     }
     void LoadTalentsContainer();
     void LoadGlyphsContainer();
-
     void LoadGearContainer();
+    void LoadIndexContainer();
 
     void ApplyGlyph(Player* player, uint8 slot, uint32 glyphID);
     void RemoveAllGlyphs(Player* player);
@@ -218,6 +230,7 @@ public:
     void ExtractGearTemplateToDB(Player* /*player*/, std::string& /*playerSpecStr*/);
     void ExtractTalentTemplateToDB(Player* /*player*/, std::string& /*playerSpecStr*/);
     void ExtractGlyphsTemplateToDB(Player* /*player*/, std::string& /*playerSpecStr*/);
+    void InsertIndexEntryToDB(Player* /*player*/, std::string& /*playerSpecStr*/);
     bool CanEquipTemplate(Player* /*player*/, std::string& /*playerSpecStr*/);
 
     std::string GetClassString(Player* /*player*/);
@@ -229,10 +242,10 @@ public:
 
     void LearnPlateMailSpells(Player* /*player*/);
 
-    GlyphContainer m_GlyphContainer;
     TalentContainer m_TalentContainer;
-
+    GlyphContainer m_GlyphContainer;
     GearContainer m_GearContainer;
+    IndexContainer m_IndexContainer;
 
     bool enableResetTalents;
     bool enableRemoveAllGlyphs;

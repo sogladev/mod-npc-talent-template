@@ -4,6 +4,15 @@
 #include "Tokenize.h"
 #include "Chat.h"
 
+enum GossipActions
+{
+    GOSSIP_ACTION_SPACER = 5000,
+    GOSSIP_ACTION_RESET_TALENTS = 5001,
+    GOSSIP_ACTION_RESET_PET_TALENTS = 5002,
+    GOSSIP_ACTION_RESET_REMOVE_GLYPHS = 5003,
+    GOSSIP_ACTION_RESET_REMOVE_EQUIPPED_GEAR = 5004,
+};
+
 void sTemplateNPC::LearnPlateMailSpells(Player *player)
 {
     switch (player->getClass())
@@ -223,6 +232,44 @@ void sTemplateNPC::LoadGearContainer()
     LOG_INFO("module", ">> TEMPLATE NPC: Loaded {} gear templates in {} ms.", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
+void sTemplateNPC::LoadIndexContainer()
+{
+    for (IndexContainer::const_iterator itr = m_IndexContainer.begin(); itr != m_IndexContainer.end(); ++itr)
+        delete* itr;
+
+    m_IndexContainer.clear();
+
+    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel` FROM `template_npc_index` ORDER BY `gossipAction`;");
+
+    uint32 oldMSTime = getMSTime();
+    uint32 count = 0;
+
+    if (!result)
+    {
+        LOG_INFO("module", ">> TEMPLATE NPC: Loaded 0 index templates. DB table `template_npc_index` is empty!");
+        return;
+    }
+
+    do
+    {
+        Field* fields = result->Fetch();
+
+        IndexTemplate* pIndex = new IndexTemplate;
+
+        pIndex->playerClass = fields[0].Get<std::string>();
+        pIndex->playerSpec = fields[1].Get<std::string>();
+        pIndex->gossipAction = fields[2].Get<uint32>();
+        pIndex->gossipText = fields[3].Get<std::string>();
+        pIndex->gearMask = fields[4].Get<uint32>();
+        pIndex->minLevel = fields[5].Get<uint32>();
+        pIndex->maxLevel = fields[6].Get<uint32>();
+
+        m_IndexContainer.push_back(pIndex);
+        ++count;
+    } while (result->NextRow());
+    LOG_INFO("module", ">> TEMPLATE NPC: Loaded {} index templates in {} ms.", count, GetMSTimeDiffToNow(oldMSTime));
+}
+
 std::string sTemplateNPC::GetClassString(Player* player)
 {
     return EnumUtils::ToTitle(Classes(player->getClass()));
@@ -234,7 +281,7 @@ bool sTemplateNPC::OverwriteTemplate(Player* player, std::string& playerSpecStr)
     CharacterDatabase.Execute("DELETE FROM `template_npc_talents` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
     CharacterDatabase.Execute("DELETE FROM `template_npc_glyphs` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
     CharacterDatabase.Execute("DELETE FROM `template_npc_gear` WHERE `playerClass`='{}' AND `playerSpec`='{}' AND `playerRaceMask` & {}", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask());
-    player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
+    CharacterDatabase.Execute("DELETE FROM `template_npc_index` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
     return false;
 }
 
@@ -249,6 +296,14 @@ void sTemplateNPC::ExtractGearTemplateToDB(Player* player, std::string& playerSp
             CharacterDatabase.Execute("INSERT INTO `template_npc_gear` (`playerClass`, `playerSpec`, `playerRaceMask`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant`) VALUES ('{}', '{}', {}, {}, {}, {}, {}, {}, {}, {}, {});", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask(), equippedItem->GetSlot(), equippedItem->GetEntry(), equippedItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_2), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_3), equippedItem->GetEnchantmentId(BONUS_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT));
         }
     }
+}
+
+void sTemplateNPC::InsertIndexEntryToDB(Player* player, std::string& playerSpecStr)
+{
+    CharacterDatabase.Execute(
+        "INSERT INTO `template_npc_index` (`playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel`) VALUES ('{}', '{}', {}, '{}', {}, {}, {});",
+        GetClassString(player).c_str(), playerSpecStr.c_str(), 9999, "|cff00ff00|TInterface\\\\icons\\\\Trade_Engineering:30:30|t|r Update this gossip text in the index!", 1, player->GetLevel(), player->GetLevel()
+    );
 }
 
 void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, std::string& playerSpecStr)
@@ -342,111 +397,27 @@ public:
 
     bool OnGossipHello(Player* player, Creature* creature)
     {
-        switch (player->getClass())
+        for (IndexContainer::const_iterator itr = sTemplateNpcMgr->m_IndexContainer.begin(); itr != sTemplateNpcMgr->m_IndexContainer.end(); ++itr)
         {
-        case CLASS_PRIEST:
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_holy_wordfortitude:30|t|r Use Discipline Spec", GOSSIP_SENDER_MAIN, 0);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_holy_holybolt:30|t|r Use Holy Spec", GOSSIP_SENDER_MAIN, 1);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_shadow_shadowwordpain:30|t|r Use Shadow Spec", GOSSIP_SENDER_MAIN, 2);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_holy_wordfortitude:30|t|r Use Discipline Spec (Talents Only)", GOSSIP_SENDER_MAIN, 100);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_holy_holybolt:30|t|r Use Holy spec (Talents only)", GOSSIP_SENDER_MAIN, 101);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_shadow_shadowwordpain:30|t|r Use Shadow spec (Talents only)", GOSSIP_SENDER_MAIN, 102);
-            break;
-        case CLASS_PALADIN:
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_holy_holybolt:30|t|r Use Holy Spec", GOSSIP_SENDER_MAIN, 3);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_holy_devotionaura:30|t|r Use Protection Spec", GOSSIP_SENDER_MAIN, 4);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_holy_auraoflight:30|t|r Use Retribution Spec", GOSSIP_SENDER_MAIN, 5);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_holy_holybolt:30|t|r Use Holy Spec (Talents Only)", GOSSIP_SENDER_MAIN, 103);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_holy_devotionaura:30|t|r Use Protection Spec (Talents Only)", GOSSIP_SENDER_MAIN, 104);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_holy_auraoflight:30|t|r Use Retribution Spec (Talents Only)", GOSSIP_SENDER_MAIN, 105);
-            break;
-        case CLASS_WARRIOR:
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_warrior_innerrage:30|t|r Use Fury Spec", GOSSIP_SENDER_MAIN, 6);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_rogue_eviscerate:30|t|r Use Arms Spec", GOSSIP_SENDER_MAIN, 7);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_warrior_defensivestance:30|t|r Use Protection Spec", GOSSIP_SENDER_MAIN, 8);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_warrior_innerrage:30|t|r Use Fury Spec (Talents Only)", GOSSIP_SENDER_MAIN, 106);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_rogue_eviscerate:30|t|r Use Arms Spec (Talents Only)", GOSSIP_SENDER_MAIN, 107);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_warrior_defensivestance:30|t|r Use Protection Spec (Talents Only)", GOSSIP_SENDER_MAIN, 108);
-            break;
-        case CLASS_MAGE:
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_holy_magicalsentry:30|t|r Use Arcane Spec", GOSSIP_SENDER_MAIN, 9);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_fire_flamebolt:30|t|r Use Fire Spec", GOSSIP_SENDER_MAIN, 10);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_frost_frostbolt02:30|t|r Use Frost Spec", GOSSIP_SENDER_MAIN, 11);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_holy_magicalsentry:30|t|r Use Arcane Spec (Talents Only)", GOSSIP_SENDER_MAIN, 109);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_fire_flamebolt:30|t|r Use Fire Spec (Talents Only)", GOSSIP_SENDER_MAIN, 110);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_frost_frostbolt02:30|t|r Use Frost Spec (Talents Only)", GOSSIP_SENDER_MAIN, 111);
-            break;
-        case CLASS_WARLOCK:
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_shadow_deathcoil:30|t|r Use Affliction Spec", GOSSIP_SENDER_MAIN, 12);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_shadow_metamorphosis:30|t|r Use Demonology Spec", GOSSIP_SENDER_MAIN, 13);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_shadow_rainoffire:30|t|r Use Destruction Spec", GOSSIP_SENDER_MAIN, 14);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_shadow_deathcoil:30|t|r Use Affliction Spec (Talents Only)", GOSSIP_SENDER_MAIN, 112);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_shadow_metamorphosis:30|t|r Use Demonology Spec (Talents Only)", GOSSIP_SENDER_MAIN, 113);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_shadow_rainoffire:30|t|r Use Destruction Spec (Talents Only)", GOSSIP_SENDER_MAIN, 114);
-            break;
-        case CLASS_SHAMAN:
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_lightning:30|t|r Use Elemental Spec", GOSSIP_SENDER_MAIN, 15);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_lightningshield:30|t|r Use Enhancement Spec", GOSSIP_SENDER_MAIN, 16);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_magicimmunity:30|t|r Use Restoration Spec", GOSSIP_SENDER_MAIN, 17);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_lightning:30|t|r Use Elemental Spec (Talents Only)", GOSSIP_SENDER_MAIN, 115);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_lightningshield:30|t|r Use Enhancement Spec (Talents Only)", GOSSIP_SENDER_MAIN, 116);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_magicimmunity:30|t|r Use Restoration Spec (Talents Only)", GOSSIP_SENDER_MAIN, 117);
-            break;
-        case CLASS_DRUID:
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_starfall:30|t|r Use Balance Spec", GOSSIP_SENDER_MAIN, 18);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_racial_bearform:30|t|r Use Feral Spec", GOSSIP_SENDER_MAIN, 19);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_healingtouch:30|t|r Use Restoration Spec", GOSSIP_SENDER_MAIN, 20);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_starfall:30|t|r Use Balance Spec (Talents Only)", GOSSIP_SENDER_MAIN, 118);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_racial_bearform:30|t|r Use Feral Spec (Talents Only)", GOSSIP_SENDER_MAIN, 119);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_nature_healingtouch:30|t|r Use Restoration Spec (Talents Only)", GOSSIP_SENDER_MAIN, 120);
-            break;
-        case CLASS_HUNTER:
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_marksmanship:30|t|r Use Marksmanship Spec", GOSSIP_SENDER_MAIN, 21);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_hunter_beasttaming:30|t|r Use Beastmastery Spec", GOSSIP_SENDER_MAIN, 22);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_Hunter_swiftstrike:30|t|r Use Survival Spec", GOSSIP_SENDER_MAIN, 23);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_marksmanship:30|t|r Use Marksmanship Spec (Talents Only)", GOSSIP_SENDER_MAIN, 121);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_hunter_beasttaming:30|t|r Use Beastmastery Spec (Talents Only)", GOSSIP_SENDER_MAIN, 122);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_Hunter_swiftstrike:30|t|r Use Survival Spec (Talents Only)", GOSSIP_SENDER_MAIN, 123);
-            break;
-        case CLASS_ROGUE:
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_rogue_eviscerate:30|t|r Use Assasination Spec", GOSSIP_SENDER_MAIN, 24);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_backstab:30|t|r Use Combat Spec", GOSSIP_SENDER_MAIN, 25);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_stealth:30|t|r Use Subtlety Spec", GOSSIP_SENDER_MAIN, 26);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_rogue_eviscerate:30|t|r Use Assasination Spec (Talents Only)", GOSSIP_SENDER_MAIN, 124);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_backstab:30|t|r Use Combat Spec (Talents Only)", GOSSIP_SENDER_MAIN, 125);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_stealth:30|t|r Use Subtlety Spec (Talents Only)", GOSSIP_SENDER_MAIN, 126);
-            break;
-        case CLASS_DEATH_KNIGHT:
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_deathknight_bloodpresence:30|t|r Use Blood Spec", GOSSIP_SENDER_MAIN, 27);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_deathknight_frostpresence:30|t|r Use Frost Spec", GOSSIP_SENDER_MAIN, 28);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_deathknight_unholypresence:30|t|r Use Unholy Spec", GOSSIP_SENDER_MAIN, 29);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_deathknight_bloodpresence:30|t|r Use Blood Spec (Talents Only)", GOSSIP_SENDER_MAIN, 127);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_deathknight_frostpresence:30|t|r Use Frost Spec (Talents Only)", GOSSIP_SENDER_MAIN, 128);
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_deathknight_unholypresence:30|t|r Use Unholy Spec (Talents Only)", GOSSIP_SENDER_MAIN, 129);
-            break;
+            if ((*itr)->playerClass == sTemplateNpcMgr->GetClassString(player).c_str() &&
+                ((*itr)->minLevel <= player->GetLevel() && player->GetLevel() <= (*itr)->maxLevel))
+            {
+                AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, (*itr)->gossipText, GOSSIP_SENDER_MAIN, (*itr)->gossipAction);
+            }
         }
+        // Extra gossip
         if (sTemplateNpcMgr->enableResetTalents || sTemplateNpcMgr->enableRemoveAllGlyphs || sTemplateNpcMgr->enableDestroyEquippedGear)
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, 5000);
+            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_SPACER);
         if (sTemplateNpcMgr->enableResetTalents)
         {
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\Trade_Engineering:30:30|t|r Reset Talents", GOSSIP_SENDER_MAIN, 31);
+            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\Trade_Engineering:30:30|t|r Reset Talents", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_RESET_TALENTS);
             if (player->getClass() == CLASS_HUNTER)
-                AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_hunter_beasttaming:30:30|t|r Reset Pet Talents", GOSSIP_SENDER_MAIN, 32);
+                AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_hunter_beasttaming:30:30|t|r Reset Pet Talents", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_RESET_PET_TALENTS);
         }
         if (sTemplateNpcMgr->enableRemoveAllGlyphs)
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\Spell_ChargeNegative:30|t|r Remove all glyphs", GOSSIP_SENDER_MAIN, 30);
+            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\Spell_ChargeNegative:30|t|r Remove all glyphs", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_RESET_REMOVE_GLYPHS);
         if (sTemplateNpcMgr->enableDestroyEquippedGear)
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_vehicle_launchplayer:30|t|r Destroy my equipped gear", GOSSIP_SENDER_MAIN, 33);
+            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_vehicle_launchplayer:30|t|r Destroy my equipped gear", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_RESET_REMOVE_EQUIPPED_GEAR);
         SendGossipMenuFor(player, creature->GetEntry(), creature->GetGUID());
         return true;
     }
@@ -561,415 +532,60 @@ public:
         if (!player || !creature)
             return false;
 
+        for (IndexContainer::const_iterator itr = sTemplateNpcMgr->m_IndexContainer.begin(); itr != sTemplateNpcMgr->m_IndexContainer.end(); ++itr)
+        {
+            if ((*itr)->gossipAction == uiAction)
+            {
+                sTemplateNpcMgr->sTalentsSpec = (*itr)->playerSpec;
+                if ((*itr)->gearMask & 1)
+                    EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
+                else if ((*itr)->gearMask & 2)
+                    LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
+                CloseGossipMenuFor(player);
+                break;
+            }
+        }
+
+        // Extra gossip
         switch (uiAction)
         {
-        case 0: // Use Discipline Priest Spec
-            sTemplateNpcMgr->sTalentsSpec = "Discipline";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 1: // Use Holy Priest Spec
-            sTemplateNpcMgr->sTalentsSpec = "Holy";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 2: // Use Shadow Priest Spec
-            sTemplateNpcMgr->sTalentsSpec = "Shadow";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 3: // Use Holy Paladin Spec
-            sTemplateNpcMgr->sTalentsSpec = "Holy";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 4: // Use Protection Paladin Spec
-            sTemplateNpcMgr->sTalentsSpec = "Protection";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 5: // Use Retribution Paladin Spec
-            sTemplateNpcMgr->sTalentsSpec = "Retribution";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 6: // Use Fury Warrior Spec
-            sTemplateNpcMgr->sTalentsSpec = "Fury";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 7: // Use Arms Warrior Spec
-            sTemplateNpcMgr->sTalentsSpec = "Arms";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 8: // Use Protection Warrior Spec
-            sTemplateNpcMgr->sTalentsSpec = "Protection";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 9: // Use Arcane Mage Spec
-            sTemplateNpcMgr->sTalentsSpec = "Arcane";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 10: // Use Fire Mage Spec
-            sTemplateNpcMgr->sTalentsSpec = "Fire";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 11: // Use Frost Mage Spec
-            sTemplateNpcMgr->sTalentsSpec = "Frost";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 12: // Use Affliction Warlock Spec
-            sTemplateNpcMgr->sTalentsSpec = "Affliction";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 13: // Use Demonology Warlock Spec
-            sTemplateNpcMgr->sTalentsSpec = "Demonology";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 14: // Use Destruction Warlock Spec
-            sTemplateNpcMgr->sTalentsSpec = "Destruction";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 15: // Use Elemental Shaman Spec
-            sTemplateNpcMgr->sTalentsSpec = "Elemental";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 16: // Use Enhancement Shaman Spec
-            sTemplateNpcMgr->sTalentsSpec = "Enhancement";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 17: // Use Restoration Shaman Spec
-            sTemplateNpcMgr->sTalentsSpec = "Restoration";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 18: // Use Balance Druid Spec
-            sTemplateNpcMgr->sTalentsSpec = "Balance";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 19: // Use Feral Druid Spec
-            sTemplateNpcMgr->sTalentsSpec = "Feral";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 20: // Use Restoration Druid Spec
-            sTemplateNpcMgr->sTalentsSpec = "Restoration";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 21: // Use Marksmanship Hunter Spec
-            sTemplateNpcMgr->sTalentsSpec = "Marksmanship";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 22: // Use Beastmastery Hunter Spec
-            sTemplateNpcMgr->sTalentsSpec = "Beastmastery";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 23: // Use Survival Hunter Spec
-            sTemplateNpcMgr->sTalentsSpec = "Survival";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 24: // Use Assassination Rogue Spec
-            sTemplateNpcMgr->sTalentsSpec = "Assassination";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 25: // Use Combat Rogue Spec
-            sTemplateNpcMgr->sTalentsSpec = "Combat";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 26: // Use Subtlety Rogue Spec
-            sTemplateNpcMgr->sTalentsSpec = "Subtlety";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 27: // Use Blood DK Spec
-            sTemplateNpcMgr->sTalentsSpec = "Blood";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 28: // Use Frost DK Spec
-            sTemplateNpcMgr->sTalentsSpec = "Frost";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 29: // Use Unholy DK Spec
-            sTemplateNpcMgr->sTalentsSpec = "Unholy";
-            EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 30:
-            sTemplateNpcMgr->RemoveAllGlyphs(player);
-            player->GetSession()->SendAreaTriggerMessage("Your glyphs have been removed.");
-            CloseGossipMenuFor(player);
-            break;
-
-        case 31:
-            player->resetTalents(true);
-            player->SendTalentsInfoData(false);
-            player->GetSession()->SendAreaTriggerMessage(LANG_RESET_TALENTS);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 32:
-            player->ResetPetTalents();
-            player->GetSession()->SendAreaTriggerMessage(LANG_RESET_PET_TALENTS);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 33:
-            for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
-            {
-                player->DestroyItem(INVENTORY_SLOT_BAG_0, i, true);
-            }
-            player->GetSession()->SendAreaTriggerMessage("Your equipped gear has been destroyed.");
-            CloseGossipMenuFor(player);
-            break;
-
-            // Priest
-        case 100:
-            sTemplateNpcMgr->sTalentsSpec = "Discipline";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 101:
-            sTemplateNpcMgr->sTalentsSpec = "Holy";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 102:
-            sTemplateNpcMgr->sTalentsSpec = "Shadow";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-            // Paladin
-        case 103:
-            sTemplateNpcMgr->sTalentsSpec = "Holy";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 104:
-            sTemplateNpcMgr->sTalentsSpec = "Protection";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 105:
-            sTemplateNpcMgr->sTalentsSpec = "Retribution";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-            // Warrior
-        case 106:
-            sTemplateNpcMgr->sTalentsSpec = "Fury";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 107:
-            sTemplateNpcMgr->sTalentsSpec = "Arms";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 108:
-            sTemplateNpcMgr->sTalentsSpec = "Protection";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-            // Mage
-        case 109:
-            sTemplateNpcMgr->sTalentsSpec = "Arcane";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 110:
-            sTemplateNpcMgr->sTalentsSpec = "Fire";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 111:
-            sTemplateNpcMgr->sTalentsSpec = "Frost";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-            // Warlock
-        case 112:
-            sTemplateNpcMgr->sTalentsSpec = "Affliction";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 113:
-            sTemplateNpcMgr->sTalentsSpec = "Demonology";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 114:
-            sTemplateNpcMgr->sTalentsSpec = "Destruction";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-            // Shaman
-        case 115:
-            sTemplateNpcMgr->sTalentsSpec = "Elemental";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 116:
-            sTemplateNpcMgr->sTalentsSpec = "Enhancement";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 117:
-            sTemplateNpcMgr->sTalentsSpec = "Restoration";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-            // Druid
-        case 118:
-            sTemplateNpcMgr->sTalentsSpec = "Balance";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 119:
-            sTemplateNpcMgr->sTalentsSpec = "Feral";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 120:
-            sTemplateNpcMgr->sTalentsSpec = "Restoration";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-            // Hunter
-        case 121:
-            sTemplateNpcMgr->sTalentsSpec = "Marksmanship";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 122:
-            sTemplateNpcMgr->sTalentsSpec = "Beastmastery";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 123:
-            sTemplateNpcMgr->sTalentsSpec = "Survival";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-            // Rogue
-        case 124:
-            sTemplateNpcMgr->sTalentsSpec = "Assasination";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 125:
-            sTemplateNpcMgr->sTalentsSpec = "Combat";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 126:
-            sTemplateNpcMgr->sTalentsSpec = "Subtlety";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-            // DK
-        case 127:
-            sTemplateNpcMgr->sTalentsSpec = "Blood";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 128:
-            sTemplateNpcMgr->sTalentsSpec = "Frost";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 129:
-            sTemplateNpcMgr->sTalentsSpec = "Unholy";
-            LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
-            CloseGossipMenuFor(player);
-            break;
-
-        case 5000:
-            // return to OnGossipHello menu, otherwise it will freeze every menu
-            OnGossipHello(player, creature);
-            break;
-
-        default: // Just in case
-            player->GetSession()->SendAreaTriggerMessage("Something went wrong in the code. Please contact the administrator.");
-            break;
+            case GOSSIP_ACTION_SPACER:
+                // return to OnGossipHello menu, otherwise it will freeze every menu
+                OnGossipHello(player, creature);
+                break;
+
+            case GOSSIP_ACTION_RESET_REMOVE_GLYPHS:
+                sTemplateNpcMgr->RemoveAllGlyphs(player);
+                player->GetSession()->SendAreaTriggerMessage("Your glyphs have been removed.");
+                CloseGossipMenuFor(player);
+                break;
+
+            case GOSSIP_ACTION_RESET_TALENTS:
+                player->resetTalents(true);
+                player->SendTalentsInfoData(false);
+                player->GetSession()->SendAreaTriggerMessage(LANG_RESET_TALENTS);
+                CloseGossipMenuFor(player);
+                break;
+
+            case GOSSIP_ACTION_RESET_PET_TALENTS:
+                player->ResetPetTalents();
+                player->GetSession()->SendAreaTriggerMessage(LANG_RESET_PET_TALENTS);
+                CloseGossipMenuFor(player);
+                break;
+
+            case GOSSIP_ACTION_RESET_REMOVE_EQUIPPED_GEAR:
+                for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
+                {
+                    player->DestroyItem(INVENTORY_SLOT_BAG_0, i, true);
+                }
+                player->GetSession()->SendAreaTriggerMessage("Your equipped gear has been destroyed.");
+                CloseGossipMenuFor(player);
+                break;
+
+            default:
+                break;
         }
+
         player->UpdateSkillsForLevel();
 
         return true;
@@ -1009,6 +625,9 @@ public:
 		sTemplateNpcMgr->ExtractGearTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
 		sTemplateNpcMgr->ExtractTalentTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
 		sTemplateNpcMgr->ExtractGlyphsTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
+		sTemplateNpcMgr->InsertIndexEntryToDB(player, sTemplateNpcMgr->sTalentsSpec);
+        player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
+        ChatHandler(player->GetSession()).PSendSysMessage("Template skeleton for \"{}\" successfully created! You can `.templatenpc reload` to test your template. WARNING: Templates should be exported and edited to `.sql`. See documentation for more info.", name);
 		return true;
 	}
 
@@ -1018,6 +637,7 @@ public:
         sTemplateNpcMgr->LoadTalentsContainer();
         sTemplateNpcMgr->LoadGlyphsContainer();
         sTemplateNpcMgr->LoadGearContainer();
+        sTemplateNpcMgr->LoadIndexContainer();
         handler->SendGlobalGMSysMessage("Template NPC templates reloaded.");
         return true;
     }
@@ -1049,6 +669,10 @@ public:
         // Load templates for Template NPC #3
         LOG_INFO("module", "Loading Template Gear...");
         sTemplateNpcMgr->LoadGearContainer();
+
+        // Load templates for Template NPC #4
+        LOG_INFO("module", "Loading Template Index...");
+        sTemplateNpcMgr->LoadIndexContainer();
 
         LOG_INFO("module", "== END TEMPLATE NPC ==");
     }
