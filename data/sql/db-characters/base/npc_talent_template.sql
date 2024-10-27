@@ -1,47 +1,44 @@
 -- DB: characters
--- TODO
-/* Integer display width is deprecated and will be removed in a future release. */
-/* 'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous. */
 
 CREATE TABLE IF NOT EXISTS `template_npc_gear` (
   `playerClass` varchar(50) NOT NULL,
   `playerSpec` varchar(50) NOT NULL,
-  `playerRaceMask` int(10) unsigned DEFAULT '0',
-  `pos` int(10) unsigned NOT NULL DEFAULT '0',
-  `itemEntry` int(10) unsigned NOT NULL DEFAULT '0',
-  `enchant` int(10) unsigned NOT NULL DEFAULT '0',
-  `socket1` int(10) unsigned NOT NULL DEFAULT '0',
-  `socket2` int(10) unsigned NOT NULL DEFAULT '0',
-  `socket3` int(10) unsigned NOT NULL DEFAULT '0',
-  `bonusEnchant` int(10) unsigned NOT NULL DEFAULT '0',
-  `prismaticEnchant` int(10) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Templates';
+  `playerRaceMask` int unsigned DEFAULT '0',
+  `pos` int unsigned NOT NULL DEFAULT '0',
+  `itemEntry` int unsigned NOT NULL DEFAULT '0',
+  `enchant` int unsigned NOT NULL DEFAULT '0',
+  `socket1` int unsigned NOT NULL DEFAULT '0',
+  `socket2` int unsigned NOT NULL DEFAULT '0',
+  `socket3` int unsigned NOT NULL DEFAULT '0',
+  `bonusEnchant` int unsigned NOT NULL DEFAULT '0',
+  `prismaticEnchant` int DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=UTF8MB4 COMMENT='Templates';
 
 
 CREATE TABLE IF NOT EXISTS `template_npc_talents` (
   `playerClass` varchar(50) NOT NULL,
   `playerSpec` varchar(50) NOT NULL,
-  `talentId` int(10) unsigned NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Templates';
+  `talentId` int unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=UTF8MB4 COMMENT='Templates';
 
 
 CREATE TABLE IF NOT EXISTS `template_npc_glyphs` (
   `playerClass` varchar(50) NOT NULL,
   `playerSpec` varchar(50) NOT NULL,
-  `slot` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `glyph` smallint(5) unsigned NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Templates';
+  `slot` tinyint unsigned NOT NULL DEFAULT '0',
+  `glyph` smallint unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=UTF8MB4 COMMENT='Templates';
 
 
 CREATE TABLE IF NOT EXISTS `template_npc_index` (
   `playerClass` varchar(50) NOT NULL,
   `playerSpec` varchar(50) NOT NULL,
-  `gossipAction` int(10) unsigned NOT NULL DEFAULT '0',
+  `gossipAction` int unsigned NOT NULL DEFAULT '0',
   `gossipText` varchar(200) NOT NULL,
-  `gearMask` int(10) unsigned NOT NULL DEFAULT '0',
-  `minLevel` int(10) unsigned NOT NULL DEFAULT '0',
-  `maxLevel` int(10) unsigned NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Templates';
+  `gearMask` int unsigned NOT NULL DEFAULT '0',
+  `minLevel` int unsigned NOT NULL DEFAULT '0',
+  `maxLevel` int unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=UTF8MB4 COMMENT='Templates';
 
 /*!40000 ALTER TABLE `template_npc_index` DISABLE KEYS */;
 SET @ACTION = 1;
