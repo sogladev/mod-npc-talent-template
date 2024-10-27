@@ -193,12 +193,22 @@ struct GearTemplate
     uint32 prismaticEnchant;
 };
 
+enum GossipActions
+{
+    GOSSIP_ACTION_SPACER = 5000, // ---------
+    GOSSIP_ACTION_RESET_TALENTS = 5001,
+    GOSSIP_ACTION_RESET_PET_TALENTS = 5002,
+    GOSSIP_ACTION_RESET_REMOVE_GLYPHS = 5003,
+    GOSSIP_ACTION_RESET_REMOVE_EQUIPPED_GEAR = 5004,
+};
+
 enum TemplateFlag
 {
     TEMPLATE_APPLY_GEAR = 0x1,
-    TEMPLATE_APPLY_TALENTS = 0x2,
+    TEMPLATE_APPLY_GLYPHS = 0x2,
+    TEMPLATE_APPLY_TALENTS = 0x4,
 
-    TEMPLATE_APPLY_GEAR_AND_TALENTS = TEMPLATE_APPLY_GEAR | TEMPLATE_APPLY_TALENTS,
+    TEMPLATE_APPLY_ALL = TEMPLATE_APPLY_GEAR | TEMPLATE_APPLY_TALENTS | TEMPLATE_APPLY_GLYPHS,
 };
 
 struct IndexTemplate
@@ -239,7 +249,8 @@ public:
     void ExtractTalentTemplateToDB(Player* player, std::string& playerSpecStr);
     void ExtractGlyphsTemplateToDB(Player* player, std::string& playerSpecStr);
     void InsertIndexEntryToDB(Player* player, std::string& playerSpecStr);
-    bool CanEquipTemplate(Player* player, std::string& playerSpecStr);
+    bool IsWearingAnyGear(Player* player);
+    bool HasSpentTalentPoints(Player* player);
 
     std::string GetClassString(Player* player);
     std::string sTalentsSpec;

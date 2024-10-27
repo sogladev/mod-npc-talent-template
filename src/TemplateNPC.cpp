@@ -4,15 +4,6 @@
 #include "Tokenize.h"
 #include "Chat.h"
 
-enum GossipActions
-{
-    GOSSIP_ACTION_SPACER = 5000, // ---------
-    GOSSIP_ACTION_RESET_TALENTS = 5001,
-    GOSSIP_ACTION_RESET_PET_TALENTS = 5002,
-    GOSSIP_ACTION_RESET_REMOVE_GLYPHS = 5003,
-    GOSSIP_ACTION_RESET_REMOVE_EQUIPPED_GEAR = 5004,
-};
-
 void sTemplateNPC::LearnPlateMailSpells(Player *player)
 {
     switch (player->getClass())
@@ -46,13 +37,13 @@ void sTemplateNPC::ApplyBonus(Player* player, Item* item, EnchantmentSlot slot, 
 
 void sTemplateNPC::ApplyGlyph(Player* player, uint8 slot, uint32 glyphID)
 {
+    if (uint32 oldGlyph = player->GetGlyph(slot))
+    {
+        player->RemoveAurasDueToSpell(sGlyphPropertiesStore.LookupEntry(oldGlyph)->SpellId);
+        player->SetGlyph(slot, 0, true);
+    }
     if (GlyphPropertiesEntry const* gp = sGlyphPropertiesStore.LookupEntry(glyphID))
     {
-        if (uint32 oldGlyph = player->GetGlyph(slot))
-        {
-            player->RemoveAurasDueToSpell(sGlyphPropertiesStore.LookupEntry(oldGlyph)->SpellId);
-            player->SetGlyph(slot, 0, true);
-        }
         player->CastSpell(player, gp->SpellId, true);
         player->SetGlyph(slot, glyphID, true);
     }
@@ -384,13 +375,19 @@ void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, std::string& player
     }
 }
 
-bool sTemplateNPC::CanEquipTemplate(Player* player, std::string& playerSpecStr)
+bool sTemplateNPC::HasSpentTalentPoints(Player* player)
 {
-    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `playerRaceMask` FROM `template_npc_gear` WHERE `playerClass`='{}' AND `playerSpec`='{}' AND `playerRaceMask`&{}", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask());
+    if (player->GetFreeTalentPoints() != player->CalculateTalentsPoints())
+        return true;
+    return false;
+}
 
-    if (!result)
-        return false;
-    return true;
+bool sTemplateNPC::IsWearingAnyGear(Player* player)
+{
+    for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
+        if (player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+            return true;
+    return false;
 }
 
 class TemplateNPC : public CreatureScript
@@ -425,109 +422,6 @@ public:
         return true;
     }
 
-    static void EquipFullTemplateGear(Player* player, std::string& playerSpecStr) // Merge
-    {
-        if (sTemplateNpcMgr->CanEquipTemplate(player, playerSpecStr) == false)
-        {
-            player->GetSession()->SendAreaTriggerMessage("There's no templates for %s specialization yet.", playerSpecStr.c_str());
-            return;
-        }
-
-        // Don't let players to use Template feature while wearing some gear
-        for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
-        {
-            if (Item* haveItemEquipped = player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
-            {
-                if (haveItemEquipped)
-                {
-                    player->GetSession()->SendAreaTriggerMessage("You need to remove all your equipped items in order to use this feature!");
-                    CloseGossipMenuFor(player);
-                    return;
-                }
-            }
-        }
-
-        // Don't let players to use Template feature after spending some talent points
-        if (player->GetFreeTalentPoints() < 71)
-        {
-            player->GetSession()->SendAreaTriggerMessage("You have already spent some talent points. You need to reset your talents first!");
-            CloseGossipMenuFor(player);
-            return;
-        }
-
-        player->_RemoveAllItemMods();
-        sTemplateNpcMgr->LearnTemplateTalents(player);
-        sTemplateNpcMgr->LearnTemplateGlyphs(player);
-        sTemplateNpcMgr->EquipTemplateGear(player);
-        sTemplateNpcMgr->LearnPlateMailSpells(player);
-
-        // update warr talent
-        player->UpdateTitansGrip();
-
-        LearnWeaponSkills(player);
-
-        player->GetSession()->SendAreaTriggerMessage("Successfully equipped %s %s template!", playerSpecStr.c_str(), sTemplateNpcMgr->GetClassString(player).c_str());
-
-        if (player->getPowerType() == POWER_MANA)
-            player->SetPower(POWER_MANA, player->GetMaxPower(POWER_MANA));
-
-        player->SetHealth(player->GetMaxHealth());
-
-        // Learn Riding/Flying
-        if (player->HasSpell(SPELL_Artisan_Riding) || player->HasSpell(SPELL_Cold_Weather_Flying) || player->HasSpell(SPELL_Amani_War_Bear) || player->HasSpell(SPELL_Teach_Learn_Talent_Specialization_Switches) || player->HasSpell(SPELL_Learn_a_Second_Talent_Specialization))
-            return;
-
-        // Cast spells that teach dual spec
-        // Both are also ImplicitTarget self and must be cast by player
-        player->CastSpell(player, SPELL_Teach_Learn_Talent_Specialization_Switches, player->GetGUID());
-        player->CastSpell(player, SPELL_Learn_a_Second_Talent_Specialization, player->GetGUID());
-
-        player->learnSpell(SPELL_Artisan_Riding);
-        player->learnSpell(SPELL_Cold_Weather_Flying);
-        player->learnSpell(SPELL_Amani_War_Bear);
-    }
-
-    static void LearnOnlyTalentsAndGlyphs(Player* player, std::string& playerSpecStr) // Merge
-    {
-        if (sTemplateNpcMgr->CanEquipTemplate(player, playerSpecStr) == false)
-        {
-            player->GetSession()->SendAreaTriggerMessage("There's no templates for %s specialization yet.", playerSpecStr.c_str());
-            return;
-        }
-
-        // Don't let players to use Template feature after spending some talent points
-        if (player->GetFreeTalentPoints() < 71)
-        {
-            player->GetSession()->SendAreaTriggerMessage("You have already spent some talent points. You need to reset your talents first!");
-            CloseGossipMenuFor(player);
-            return;
-        }
-
-        sTemplateNpcMgr->LearnTemplateTalents(player);
-        sTemplateNpcMgr->LearnTemplateGlyphs(player);
-        sTemplateNpcMgr->LearnPlateMailSpells(player);
-
-        LearnWeaponSkills(player);
-
-        player->GetSession()->SendAreaTriggerMessage("Successfuly learned talent spec %s!", playerSpecStr.c_str());
-
-        // Learn Riding/Flying
-        if (player->HasSpell(SPELL_Artisan_Riding) ||
-            player->HasSpell(SPELL_Cold_Weather_Flying) ||
-            player->HasSpell(SPELL_Amani_War_Bear) ||
-            player->HasSpell(SPELL_Teach_Learn_Talent_Specialization_Switches) || player->HasSpell(SPELL_Learn_a_Second_Talent_Specialization))
-            return;
-
-        // Cast spells that teach dual spec
-        // Both are also ImplicitTarget self and must be cast by player
-        player->CastSpell(player, SPELL_Teach_Learn_Talent_Specialization_Switches, player->GetGUID());
-        player->CastSpell(player, SPELL_Learn_a_Second_Talent_Specialization, player->GetGUID());
-
-        player->learnSpell(SPELL_Artisan_Riding);
-        player->learnSpell(SPELL_Cold_Weather_Flying);
-        player->learnSpell(SPELL_Amani_War_Bear);
-    }
-
     bool OnGossipSelect(Player* player, Creature* creature, uint32 /*uiSender*/, uint32 uiAction)
     {
         player->PlayerTalkClass->ClearMenus();
@@ -540,10 +434,7 @@ public:
             if (indexTemplate->gossipAction == uiAction)
             {
                 sTemplateNpcMgr->sTalentsSpec = indexTemplate->playerSpec;
-                if (indexTemplate->gearMask == TEMPLATE_APPLY_GEAR_AND_TALENTS)
-                    EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-                else if (indexTemplate->gearMask == TEMPLATE_APPLY_TALENTS)
-                    LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
+                ApplyTemplate(player, sTemplateNpcMgr->sTalentsSpec, indexTemplate->gearMask);
                 CloseGossipMenuFor(player);
                 break;
             }
@@ -594,6 +485,64 @@ public:
 
         return true;
     }
+
+    static void ApplyTemplate(Player* player, std::string& playerSpecStr, TemplateFlag flag)
+    {
+        if ((flag & TEMPLATE_APPLY_GEAR) && sTemplateNpcMgr->IsWearingAnyGear(player))
+        {
+            player->GetSession()->SendAreaTriggerMessage("You need to remove all your equipped items in order to use this feature!");
+            CloseGossipMenuFor(player);
+            return;
+        }
+
+        if ((flag & TEMPLATE_APPLY_TALENTS) && sTemplateNpcMgr->HasSpentTalentPoints(player))
+        {
+            player->GetSession()->SendAreaTriggerMessage("You have already spent some talent points. You need to reset your talents first!");
+            CloseGossipMenuFor(player);
+            return;
+        }
+
+        if (flag & TEMPLATE_APPLY_GLYPHS)
+            sTemplateNpcMgr->LearnTemplateGlyphs(player);
+
+        if (flag & TEMPLATE_APPLY_TALENTS)
+            sTemplateNpcMgr->LearnTemplateTalents(player);
+
+        if (flag & TEMPLATE_APPLY_GEAR)
+        {
+            player->_RemoveAllItemMods();
+            sTemplateNpcMgr->EquipTemplateGear(player);
+            sTemplateNpcMgr->LearnPlateMailSpells(player);
+        }
+
+        if (flag & (TEMPLATE_APPLY_TALENTS | TEMPLATE_APPLY_GEAR))
+            player->UpdateTitansGrip();
+
+        LearnWeaponSkills(player);
+
+        // Set full health and mana
+        player->SetHealth(player->GetMaxHealth());
+        if (player->getPowerType() == POWER_MANA)
+            player->SetPower(POWER_MANA, player->GetMaxPower(POWER_MANA));
+
+        // Learn Riding/Flying
+        if (!player->HasSpell(SPELL_Artisan_Riding))
+            player->learnSpell(SPELL_Artisan_Riding);
+        if (!player->HasSpell(SPELL_Cold_Weather_Flying))
+            player->learnSpell(SPELL_Cold_Weather_Flying);
+        if (!player->HasSpell(SPELL_Amani_War_Bear))
+            player->learnSpell(SPELL_Amani_War_Bear);
+
+        // Cast spells that teach dual spec
+        // Both are also ImplicitTarget self and must be cast by player
+        if (!player->HasSpell(SPELL_Teach_Learn_Talent_Specialization_Switches))
+            player->CastSpell(player, SPELL_Teach_Learn_Talent_Specialization_Switches, player->GetGUID());
+        if (!player->HasSpell(SPELL_Learn_a_Second_Talent_Specialization))
+            player->CastSpell(player, SPELL_Learn_a_Second_Talent_Specialization, player->GetGUID());
+
+        player->GetSession()->SendAreaTriggerMessage("Successfully equipped %s %s template!", playerSpecStr.c_str(), sTemplateNpcMgr->GetClassString(player).c_str());
+    }
+
 };
 
 using namespace Acore::ChatCommands;
@@ -630,11 +579,11 @@ public:
 		sTemplateNpcMgr->ExtractGlyphsTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
 		sTemplateNpcMgr->InsertIndexEntryToDB(player, sTemplateNpcMgr->sTalentsSpec);
         player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
-        ChatHandler(player->GetSession()).PSendSysMessage("Template skeleton for \"{}\" successfully created! You can `.templatenpc reload` to test your template. WARNING: Templates should be exported and edited to `.sql`. See documentation for more info.", name);
+        ChatHandler(player->GetSession()).PSendSysMessage("Template skeleton for \"{}\" successfully created! You can `.templatenpc reload` to test your template. WARNING: Templates should be exported to `.sql`. See documentation for more info.", name);
 		return true;
 	}
 
-	static bool HandleCopyCommand(ChatHandler *handler, PlayerIdentifier playerToCopyFrom)
+	static bool HandleCopyCommand(ChatHandler *handler, PlayerIdentifier /*playerToCopyFrom*/)
     {
         //"Copies your target's gear onto your character. example: `.template copy`"
 		Player* player = handler->GetSession()->GetPlayer();
