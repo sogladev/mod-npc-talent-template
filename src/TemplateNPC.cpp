@@ -608,8 +608,7 @@ public:
         {
             { "reload", HandleReloadTemplateNPCCommand, SEC_ADMINISTRATOR, Console::No },
             { "create", HandleCreateClassSpecItemSetCommand, SEC_ADMINISTRATOR, Console::No },
-            // { "copy", HandleCopyCommand, SEC_ADMINISTRATOR, Console::No },
-            // {"copy", SEC_ADMINISTRATOR, false, &HandleCopyCommand, "Copies your target's gear onto your character. example: `.template copy`"},
+            { "copy", HandleCopyCommand, SEC_PLAYER, Console::No },
         };
 
         static ChatCommandTable commandTable =
@@ -632,6 +631,14 @@ public:
 		sTemplateNpcMgr->InsertIndexEntryToDB(player, sTemplateNpcMgr->sTalentsSpec);
         player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
         ChatHandler(player->GetSession()).PSendSysMessage("Template skeleton for \"{}\" successfully created! You can `.templatenpc reload` to test your template. WARNING: Templates should be exported and edited to `.sql`. See documentation for more info.", name);
+		return true;
+	}
+
+	static bool HandleCopyCommand(ChatHandler *handler, PlayerIdentifier playerToCopyFrom)
+    {
+        //"Copies your target's gear onto your character. example: `.template copy`"
+		Player* player = handler->GetSession()->GetPlayer();
+        player->GetSession()->SendAreaTriggerMessage("WIP");
 		return true;
 	}
 
