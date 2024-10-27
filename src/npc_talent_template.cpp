@@ -1,8 +1,9 @@
-#include "TemplateNPC.h"
-#include "Config.h"
-#include "ScriptedGossip.h"
-#include "Tokenize.h"
 #include "Chat.h"
+#include "Config.h"
+#include "ReputationMgr.h"
+#include "ScriptedGossip.h"
+#include "SharedDefines.h"
+#include "npc_talent_template.h"
 
 void sTemplateNPC::LearnPlateMailSpells(Player *player)
 {
@@ -11,11 +12,11 @@ void sTemplateNPC::LearnPlateMailSpells(Player *player)
     case CLASS_WARRIOR:
     case CLASS_PALADIN:
     case CLASS_DEATH_KNIGHT:
-        player->learnSpell(PLATE_MAIL);
+        player->learnSpell(SPELL_PLATE_MAIL);
         break;
     case CLASS_SHAMAN:
     case CLASS_HUNTER:
-        player->learnSpell(MAIL);
+        player->learnSpell(SPELL_MAIL);
         break;
     default:
         break;
@@ -104,7 +105,7 @@ void sTemplateNPC::EquipTemplateGear(Player* player)
             gearTemplate->playerSpec == sTalentsSpec &&
             gearTemplate->playerRaceMask & player->getRaceMask())
         {
-            // Equip the item and apply enchants and gems
+            // Equip the item and apply enchants and gemTemplateNpcs
             if (Item* item = player->EquipNewItem(gearTemplate->pos, gearTemplate->itemEntry, true))
             {
                 ApplyBonus(player, item, PERM_ENCHANTMENT_SLOT, gearTemplate->enchant);
@@ -127,11 +128,11 @@ void sTemplateNPC::LoadTalentsContainer()
     uint32 oldMSTime = getMSTime();
     uint32 count = 0;
 
-    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `talentId` FROM `template_npc_talents`");
+    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `talentId` FROM `mod_npc_talent_template_talents`");
 
     if (!result)
     {
-        LOG_WARN("sql.sql", ">> TEMPLATE NPC: Loaded 0 talent templates. DB table `template_npc_talents` is empty!");
+        LOG_WARN("sql.sql", ">> TEMPLATE NPC: Loaded 0 talent templates. DB table `mod_npc_talent_template_talents` is empty!");
         return;
     }
 
@@ -157,14 +158,14 @@ void sTemplateNPC::LoadGlyphsContainer()
         delete glyph;
     glyphContainer.clear();
 
-    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `slot`, `glyph` FROM `template_npc_glyphs`");
+    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `slot`, `glyph` FROM `mod_npc_talent_template_glyphs`");
 
     uint32 oldMSTime = getMSTime();
     uint32 count = 0;
 
     if (!result)
     {
-        LOG_WARN("sql.sql", ">> TEMPLATE NPC: Loaded 0 glyph templates. DB table `template_npc_glyphs` is empty!");
+        LOG_WARN("sql.sql", ">> TEMPLATE NPC: Loaded 0 glyph templates. DB table `mod_npc_talent_template_glyphs` is empty!");
         return;
     }
 
@@ -192,14 +193,14 @@ void sTemplateNPC::LoadGearContainer()
         delete gear;
     gearContainer.clear();
 
-    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `playerRaceMask`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant` FROM `template_npc_gear`");
+    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `playerRaceMask`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant` FROM `mod_npc_talent_template_gear`");
 
     uint32 oldMSTime = getMSTime();
     uint32 count = 0;
 
     if (!result)
     {
-        LOG_INFO("module", ">> TEMPLATE NPC: Loaded 0 gear templates. DB table `template_npc_gear` is empty!");
+        LOG_INFO("module", ">> TEMPLATE NPC: Loaded 0 gear templates. DB table `mod_npc_talent_template_gear` is empty!");
         return;
     }
 
@@ -233,14 +234,14 @@ void sTemplateNPC::LoadIndexContainer()
         delete index;
     indexContainer.clear();
 
-    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel` FROM `template_npc_index` ORDER BY `gossipAction`;");
+    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel` FROM `mod_npc_talent_template_index` ORDER BY `gossipAction`;");
 
     uint32 oldMSTime = getMSTime();
     uint32 count = 0;
 
     if (!result)
     {
-        LOG_INFO("module", ">> TEMPLATE NPC: Loaded 0 index templates. DB table `template_npc_index` is empty!");
+        LOG_INFO("module", ">> TEMPLATE NPC: Loaded 0 index templates. DB table `mod_npc_talent_template_index` is empty!");
         return;
     }
 
@@ -254,7 +255,7 @@ void sTemplateNPC::LoadIndexContainer()
         pIndex->playerSpec = fields[1].Get<std::string>();
         pIndex->gossipAction = fields[2].Get<uint32>();
         pIndex->gossipText = fields[3].Get<std::string>();
-        pIndex->gearMask = static_cast<TemplateFlag>(fields[4].Get<uint32>());
+        pIndex->gearMask = static_cast<TemplateFlags>(fields[4].Get<uint32>());
         pIndex->minLevel = fields[5].Get<uint32>();
         pIndex->maxLevel = fields[6].Get<uint32>();
 
@@ -271,11 +272,11 @@ std::string sTemplateNPC::GetClassString(Player* player)
 
 bool sTemplateNPC::OverwriteTemplate(Player* player, std::string& playerSpecStr)
 {
-    // Delete old talent, glyph, and gear ,templates before extracting new ones
-    CharacterDatabase.Execute("DELETE FROM `template_npc_talents` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-    CharacterDatabase.Execute("DELETE FROM `template_npc_glyphs` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-    CharacterDatabase.Execute("DELETE FROM `template_npc_gear` WHERE `playerClass`='{}' AND `playerSpec`='{}' AND `playerRaceMask` & {}", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask());
-    CharacterDatabase.Execute("DELETE FROM `template_npc_index` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
+    // Delete old talent, glyph, and gear templates before extracting new ones
+    CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_talents` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
+    CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_glyphs` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
+    CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_gear` WHERE `playerClass`='{}' AND `playerSpec`='{}' AND `playerRaceMask` & {}", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask());
+    CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_index` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
     return false;
 }
 
@@ -287,7 +288,7 @@ void sTemplateNPC::ExtractGearTemplateToDB(Player* player, std::string& playerSp
 
         if (equippedItem)
         {
-            CharacterDatabase.Execute("INSERT INTO `template_npc_gear` (`playerClass`, `playerSpec`, `playerRaceMask`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant`) VALUES ('{}', '{}', {}, {}, {}, {}, {}, {}, {}, {}, {});", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask(), equippedItem->GetSlot(), equippedItem->GetEntry(), equippedItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_2), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_3), equippedItem->GetEnchantmentId(BONUS_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT));
+            CharacterDatabase.Execute("INSERT INTO `mod_npc_talent_template_gear` (`playerClass`, `playerSpec`, `playerRaceMask`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant`) VALUES ('{}', '{}', {}, {}, {}, {}, {}, {}, {}, {}, {});", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask(), equippedItem->GetSlot(), equippedItem->GetEntry(), equippedItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_2), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_3), equippedItem->GetEnchantmentId(BONUS_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT));
         }
     }
 }
@@ -295,7 +296,7 @@ void sTemplateNPC::ExtractGearTemplateToDB(Player* player, std::string& playerSp
 void sTemplateNPC::InsertIndexEntryToDB(Player* player, std::string& playerSpecStr)
 {
     CharacterDatabase.Execute(
-        "INSERT INTO `template_npc_index` (`playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel`) VALUES ('{}', '{}', {}, '{}', {}, {}, {});",
+        "INSERT INTO `mod_npc_talent_template_index` (`playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel`) VALUES ('{}', '{}', {}, '{}', {}, {}, {});",
         GetClassString(player).c_str(), playerSpecStr.c_str(), 9999, "|cff00ff00|TInterface\\\\icons\\\\Trade_Engineering:30:30|t|r Update this gossip text in the index!", 1, player->GetLevel(), player->GetLevel()
     );
 }
@@ -310,7 +311,8 @@ void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, std::string& player
     }
     else if (player->GetFreeTalentPoints() > 0)
     {
-        player->GetSession()->SendAreaTriggerMessage("You have unspent talent points. Please spend all your talent points and re-extract the template.");
+        player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_EXTRACT_MUST_SPEND_ALL_TALENT_POINTS)->c_str());
+        ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_EXTRACT_MUST_SPEND_ALL_TALENT_POINTS);
         return;
     }
     else
@@ -320,7 +322,7 @@ void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, std::string& player
             Field* fields = result->Fetch();
             uint32 spell = fields[0].Get<uint32>();
 
-            CharacterDatabase.Execute("INSERT INTO `template_npc_talents` (`playerClass`, `playerSpec`, `talentId`) VALUES ('{}', '{}', {})", GetClassString(player).c_str(), playerSpecStr.c_str(), spell);
+            CharacterDatabase.Execute("INSERT INTO `mod_npc_talent_template_talents` (`playerClass`, `playerSpec`, `talentId`) VALUES ('{}', '{}', {})", GetClassString(player).c_str(), playerSpecStr.c_str(), spell);
         } while (result->NextRow());
     }
 }
@@ -333,7 +335,8 @@ void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, std::string& player
     {
         if (!result)
         {
-            player->GetSession()->SendAreaTriggerMessage("Get glyphs and re-extract the template!");
+            player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_EXTRACT_GET_GLYPHS)->c_str());
+            ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_EXTRACT_GET_GLYPHS);
             continue;
         }
 
@@ -371,7 +374,7 @@ void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, std::string& player
             break;
         }
 
-        CharacterDatabase.Execute("INSERT INTO `template_npc_glyphs` (`playerClass`, `playerSpec`, `slot`, `glyph`) VALUES ('{}', '{}', {}, {});", GetClassString(player).c_str(), playerSpecStr.c_str(), slot, storedGlyph);
+        CharacterDatabase.Execute("INSERT INTO `mod_npc_talent_template_glyphs` (`playerClass`, `playerSpec`, `slot`, `glyph`) VALUES ('{}', '{}', {}, {});", GetClassString(player).c_str(), playerSpecStr.c_str(), slot, storedGlyph);
     }
 }
 
@@ -390,10 +393,100 @@ bool sTemplateNPC::IsWearingAnyGear(Player* player)
     return false;
 }
 
-class TemplateNPC : public CreatureScript
+void sTemplateNPC::SatisfyExtraGearRequirements(Player* player)
+{
+    switch (player->getClass())
+    {
+        case CLASS_WARRIOR:
+        case CLASS_SHAMAN:
+            if (!player->HasSpell(SPELL_MASTER_HAMMERSMITH) &&
+                (sTalentsSpec == "Fury70PvET6" || sTalentsSpec == "Enhancement70PvET6"))
+            {
+                player->learnSpell(SPELL_MASTER_HAMMERSMITH);
+            }
+            break;
+        case CLASS_DRUID:
+            if ((sTalentsSpec == "Restoration70PvET6") &&
+                (player->GetReputationRank(TEMPLATE_NPC_FACTION_ASHTONGUE_DEATHSWORN) < REP_EXALTED))
+            {
+                player->GetReputationMgr().SetReputation(sFactionStore.LookupEntry(TEMPLATE_NPC_FACTION_ASHTONGUE_DEATHSWORN), TEMPLATE_NPC_REP_AMOUNT_EXALTED);
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void sTemplateNPC::ApplyTemplate(Player* player, TemplateFlags flag)
+{
+    bool canApply = true;
+    if ((flag & TEMPLATE_APPLY_GEAR) && sTemplateNpcMgr->IsWearingAnyGear(player))
+    {
+        player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_MUST_REMOVE_EQUIPPED)->c_str());
+        ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_MUST_REMOVE_EQUIPPED);
+        canApply = false;
+    }
+    if ((flag & TEMPLATE_APPLY_TALENTS) && sTemplateNpcMgr->HasSpentTalentPoints(player))
+    {
+        player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_MUST_RESET_TALENTS)->c_str());
+        ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_MUST_RESET_TALENTS);
+        canApply = false;
+    }
+    if (!canApply)
+    {
+        CloseGossipMenuFor(player);
+        return;
+    }
+
+    if (flag & TEMPLATE_APPLY_GLYPHS)
+        sTemplateNpcMgr->LearnTemplateGlyphs(player);
+
+    if (flag & TEMPLATE_APPLY_TALENTS)
+        sTemplateNpcMgr->LearnTemplateTalents(player);
+
+    if (flag & TEMPLATE_APPLY_GEAR)
+    {
+        player->_RemoveAllItemMods();
+        sTemplateNpcMgr->LearnPlateMailSpells(player);
+        sTemplateNpcMgr->SatisfyExtraGearRequirements(player);
+        sTemplateNpcMgr->EquipTemplateGear(player);
+    }
+
+    if (flag & (TEMPLATE_APPLY_TALENTS | TEMPLATE_APPLY_GEAR))
+        player->UpdateTitansGrip();
+
+    LearnWeaponSkills(player);
+
+    // Set full health and mana
+    player->SetHealth(player->GetMaxHealth());
+    if (player->getPowerType() == POWER_MANA)
+        player->SetPower(POWER_MANA, player->GetMaxPower(POWER_MANA));
+
+    // Learn Riding/Flying
+    if (!player->HasSpell(SPELL_ARTISAN_RIDING))
+        player->learnSpell(SPELL_ARTISAN_RIDING);
+    if (!player->HasSpell(SPELL_COLD_WEATHER_FLYING))
+        player->learnSpell(SPELL_COLD_WEATHER_FLYING);
+
+    if (player->GetTeamId() == TEAM_HORDE && !player->HasSpell(sTemplateNpcMgr->hordeMount))
+        player->learnSpell(sTemplateNpcMgr->hordeMount);
+    else if(player->GetTeamId() == TEAM_ALLIANCE && !player->HasSpell(sTemplateNpcMgr->allianceMount))
+        player->learnSpell(sTemplateNpcMgr->allianceMount);
+
+    // Cast spells that teach dual spec
+    // Both are also ImplicitTarget self and must be cast by player
+    if (!player->HasSpell(SPELL_TEACH_LEARN_TALENT_SPECIALIZATION_SWITCHES))
+        player->CastSpell(player, SPELL_TEACH_LEARN_TALENT_SPECIALIZATION_SWITCHES, player->GetGUID());
+    if (!player->HasSpell(SPELL_LEARN_A_SECOND_TALENT_SPECIALIZATION))
+        player->CastSpell(player, SPELL_LEARN_A_SECOND_TALENT_SPECIALIZATION, player->GetGUID());
+
+    player->GetSession()->SendAreaTriggerMessage(player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EQUIPPED_TEMPLATE)->c_str(), sTemplateNpcMgr->GetClassString(player).c_str(), sTalentsSpec.c_str());
+}
+
+class npc_talent_template : public CreatureScript
 {
 public:
-    TemplateNPC() : CreatureScript("TemplateNPC") {}
+    npc_talent_template() : CreatureScript("npc_talent_template") {}
 
     bool OnGossipHello(Player* player, Creature* creature)
     {
@@ -434,7 +527,7 @@ public:
             if (indexTemplate->gossipAction == uiAction)
             {
                 sTemplateNpcMgr->sTalentsSpec = indexTemplate->playerSpec;
-                ApplyTemplate(player, sTemplateNpcMgr->sTalentsSpec, indexTemplate->gearMask);
+                sTemplateNpcMgr->ApplyTemplate(player, indexTemplate->gearMask);
                 CloseGossipMenuFor(player);
                 break;
             }
@@ -450,7 +543,7 @@ public:
 
             case GOSSIP_ACTION_RESET_REMOVE_GLYPHS:
                 sTemplateNpcMgr->RemoveAllGlyphs(player);
-                player->GetSession()->SendAreaTriggerMessage("Your glyphs have been removed.");
+                player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_REMOVED_GLYPHS)->c_str());
                 CloseGossipMenuFor(player);
                 break;
 
@@ -473,7 +566,7 @@ public:
                     player->DestroyItem(INVENTORY_SLOT_BAG_0, i, true);
                 }
                 player->SaveToDB(false, false);
-                player->GetSession()->SendAreaTriggerMessage("Your equipped gear has been destroyed.");
+                player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_DESTROYED_EQUIPPED_GEAR)->c_str());
                 CloseGossipMenuFor(player);
                 break;
 
@@ -485,71 +578,13 @@ public:
 
         return true;
     }
-
-    static void ApplyTemplate(Player* player, std::string& playerSpecStr, TemplateFlag flag)
-    {
-        if ((flag & TEMPLATE_APPLY_GEAR) && sTemplateNpcMgr->IsWearingAnyGear(player))
-        {
-            player->GetSession()->SendAreaTriggerMessage("You need to remove all your equipped items in order to use this feature!");
-            CloseGossipMenuFor(player);
-            return;
-        }
-
-        if ((flag & TEMPLATE_APPLY_TALENTS) && sTemplateNpcMgr->HasSpentTalentPoints(player))
-        {
-            player->GetSession()->SendAreaTriggerMessage("You have already spent some talent points. You need to reset your talents first!");
-            CloseGossipMenuFor(player);
-            return;
-        }
-
-        if (flag & TEMPLATE_APPLY_GLYPHS)
-            sTemplateNpcMgr->LearnTemplateGlyphs(player);
-
-        if (flag & TEMPLATE_APPLY_TALENTS)
-            sTemplateNpcMgr->LearnTemplateTalents(player);
-
-        if (flag & TEMPLATE_APPLY_GEAR)
-        {
-            player->_RemoveAllItemMods();
-            sTemplateNpcMgr->EquipTemplateGear(player);
-            sTemplateNpcMgr->LearnPlateMailSpells(player);
-        }
-
-        if (flag & (TEMPLATE_APPLY_TALENTS | TEMPLATE_APPLY_GEAR))
-            player->UpdateTitansGrip();
-
-        LearnWeaponSkills(player);
-
-        // Set full health and mana
-        player->SetHealth(player->GetMaxHealth());
-        if (player->getPowerType() == POWER_MANA)
-            player->SetPower(POWER_MANA, player->GetMaxPower(POWER_MANA));
-
-        // Learn Riding/Flying
-        if (!player->HasSpell(SPELL_Artisan_Riding))
-            player->learnSpell(SPELL_Artisan_Riding);
-        if (!player->HasSpell(SPELL_Cold_Weather_Flying))
-            player->learnSpell(SPELL_Cold_Weather_Flying);
-        if (!player->HasSpell(SPELL_Amani_War_Bear))
-            player->learnSpell(SPELL_Amani_War_Bear);
-
-        // Cast spells that teach dual spec
-        // Both are also ImplicitTarget self and must be cast by player
-        if (!player->HasSpell(SPELL_Teach_Learn_Talent_Specialization_Switches))
-            player->CastSpell(player, SPELL_Teach_Learn_Talent_Specialization_Switches, player->GetGUID());
-        if (!player->HasSpell(SPELL_Learn_a_Second_Talent_Specialization))
-            player->CastSpell(player, SPELL_Learn_a_Second_Talent_Specialization, player->GetGUID());
-
-        player->GetSession()->SendAreaTriggerMessage("Successfully equipped %s %s template!", playerSpecStr.c_str(), sTemplateNpcMgr->GetClassString(player).c_str());
-    }
-
 };
 
 using namespace Acore::ChatCommands;
-class TemplateNPC_command : public CommandScript
+class npc_talent_template_command : public CommandScript
 {
 public:
-    TemplateNPC_command() : CommandScript("TemplateNPC_command") {}
+    npc_talent_template_command() : CommandScript("npc_talent_template_command") {}
 
     ChatCommandTable GetCommands() const override
     {
@@ -578,16 +613,17 @@ public:
 		sTemplateNpcMgr->ExtractTalentTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
 		sTemplateNpcMgr->ExtractGlyphsTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
 		sTemplateNpcMgr->InsertIndexEntryToDB(player, sTemplateNpcMgr->sTalentsSpec);
-        player->GetSession()->SendAreaTriggerMessage("Template successfully created!");
-        ChatHandler(player->GetSession()).PSendSysMessage("Template skeleton for \"{}\" successfully created! You can `.templatenpc reload` to test your template. WARNING: Templates should be exported to `.sql`. See documentation for more info.", name);
+        player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT)->c_str());
+        ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT_INFO);
 		return true;
 	}
 
+    // Copies your target's gear onto your character. example: `.templatenpc copy`
 	static bool HandleCopyCommand(ChatHandler *handler, PlayerIdentifier /*playerToCopyFrom*/)
     {
-        //"Copies your target's gear onto your character. example: `.template copy`"
+        // NYI
 		Player* player = handler->GetSession()->GetPlayer();
-        player->GetSession()->SendAreaTriggerMessage("WIP");
+        player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_COPIED)->c_str());
 		return true;
 	}
 
@@ -598,49 +634,48 @@ public:
         sTemplateNpcMgr->LoadGlyphsContainer();
         sTemplateNpcMgr->LoadGearContainer();
         sTemplateNpcMgr->LoadIndexContainer();
-        handler->SendGlobalGMSysMessage("Template NPC templates reloaded.");
+        handler->SendGlobalGMSysMessage(handler->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_RELOADED)->c_str());
         return true;
     }
 };
 
-class TemplateNPC_World : public WorldScript
+class npc_talent_template_world : public WorldScript
 {
 public:
-    TemplateNPC_World() : WorldScript("TemplateNPC_World") {}
+    npc_talent_template_world() : WorldScript("npc_talent_template_world") {}
 
     void OnAfterConfigLoad(bool /*reload*/) override
     {
-        sTemplateNpcMgr->enableResetTalents = sConfigMgr->GetOption<bool>("NpcTalentTemplate.EnableResetTalents", false);
+        sTemplateNpcMgr->enableResetTalents = sConfigMgr->GetOption<bool>("NpcTalentTemplate.EnableResetTalents", true);
         sTemplateNpcMgr->enableRemoveAllGlyphs = sConfigMgr->GetOption<bool>("NpcTalentTemplate.EnableRemoveAllGlyphs", true);
         sTemplateNpcMgr->enableDestroyEquippedGear = sConfigMgr->GetOption<bool>("NpcTalentTemplate.EnableDestroyEquippedGear", true);
+        sTemplateNpcMgr->allianceMount = sConfigMgr->GetOption<uint32>("NpcTalentTemplate.AllianceMount", SPELL_BIG_BATTLE_BEAR);
+        sTemplateNpcMgr->hordeMount = sConfigMgr->GetOption<uint32>("NpcTalentTemplate.HordeMount", SPELL_BIG_BATTLE_BEAR);
     }
 
     void OnStartup() override
     {
-        // Load templates for Template NPC #1
-        LOG_INFO("module", "== TEMPLATE NPC ==");
+        LOG_INFO("module", "== START NPC TALENT TEMPLATE ==");
+
         LOG_INFO("module", "Loading Template Talents...");
         sTemplateNpcMgr->LoadTalentsContainer();
 
-        // Load templates for Template NPC #2
         LOG_INFO("module", "Loading Template Glyphs...");
         sTemplateNpcMgr->LoadGlyphsContainer();
 
-        // Load templates for Template NPC #3
         LOG_INFO("module", "Loading Template Gear...");
         sTemplateNpcMgr->LoadGearContainer();
 
-        // Load templates for Template NPC #4
         LOG_INFO("module", "Loading Template Index...");
         sTemplateNpcMgr->LoadIndexContainer();
 
-        LOG_INFO("module", "== END TEMPLATE NPC ==");
+        LOG_INFO("module", "== END NPC TALENT TEMPLATE ==");
     }
 };
 
-void AddSC_TemplateNPC()
+void AddSC_npc_talent_template()
 {
-    new TemplateNPC();
-    new TemplateNPC_command();
-    new TemplateNPC_World();
+    new npc_talent_template();
+    new npc_talent_template_command();
+    new npc_talent_template_world();
 }
