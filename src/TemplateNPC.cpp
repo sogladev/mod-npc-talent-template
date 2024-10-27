@@ -6,7 +6,7 @@
 
 enum GossipActions
 {
-    GOSSIP_ACTION_SPACER = 5000,
+    GOSSIP_ACTION_SPACER = 5000, // ---------
     GOSSIP_ACTION_RESET_TALENTS = 5001,
     GOSSIP_ACTION_RESET_PET_TALENTS = 5002,
     GOSSIP_ACTION_RESET_REMOVE_GLYPHS = 5003,
@@ -79,7 +79,7 @@ void sTemplateNPC::RemoveAllGlyphs(Player* player)
 
 void sTemplateNPC::LearnTemplateTalents(Player* player)
 {
-    for (TalentTemplate*& talentTemplate : m_TalentContainer)
+    for (auto const& talentTemplate : talentContainer)
     {
         if (talentTemplate->playerClass == GetClassString(player).c_str() && talentTemplate->playerSpec == sTalentsSpec)
         {
@@ -92,40 +92,46 @@ void sTemplateNPC::LearnTemplateTalents(Player* player)
 
 void sTemplateNPC::LearnTemplateGlyphs(Player* player)
 {
-    for (GlyphContainer::const_iterator itr = m_GlyphContainer.begin(); itr != m_GlyphContainer.end(); ++itr)
+    for (auto const& glyphTemplate : glyphContainer)
     {
-        if ((*itr)->playerClass == GetClassString(player).c_str() && (*itr)->playerSpec == sTalentsSpec)
-            ApplyGlyph(player, (*itr)->slot, (*itr)->glyph);
+        if (glyphTemplate->playerClass == GetClassString(player).c_str() && glyphTemplate->playerSpec == sTalentsSpec)
+        {
+            ApplyGlyph(player, glyphTemplate->slot, glyphTemplate->glyph);
+        }
     }
     player->SendTalentsInfoData(false);
 }
 
 void sTemplateNPC::EquipTemplateGear(Player* player)
 {
-    // reverse sort so we equip items from trinket to helm so we avoid issue with meta gems
-    std::sort(m_GearContainer.begin(), m_GearContainer.end(), std::greater<GearTemplate*>());
+    // Reverse sort so we equip items from trinket to helm so we avoid issue with meta gems
+    std::ranges::sort(gearContainer, std::greater<>());
 
-    for (GearContainer::const_iterator itr = m_GearContainer.begin(); itr != m_GearContainer.end(); ++itr)
+    for (auto const& gearTemplate : gearContainer)
     {
-        if ((*itr)->playerClass == GetClassString(player).c_str() && (*itr)->playerSpec == sTalentsSpec && (*itr)->playerRaceMask & player->getRaceMask())
+        if (gearTemplate->playerClass == GetClassString(player).c_str() &&
+            gearTemplate->playerSpec == sTalentsSpec &&
+            gearTemplate->playerRaceMask & player->getRaceMask())
         {
-            player->EquipNewItem((*itr)->pos, (*itr)->itemEntry, true); // Equip the item and apply enchants and gems
-            ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), PERM_ENCHANTMENT_SLOT, (*itr)->enchant);
-            ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), BONUS_ENCHANTMENT_SLOT, (*itr)->bonusEnchant);
-            ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), PRISMATIC_ENCHANTMENT_SLOT, (*itr)->prismaticEnchant);
-            ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT_2, (*itr)->socket2);
-            ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT_3, (*itr)->socket3);
-            ApplyBonus(player, player->GetItemByPos(INVENTORY_SLOT_BAG_0, (*itr)->pos), SOCK_ENCHANTMENT_SLOT, (*itr)->socket1);
+            // Equip the item and apply enchants and gems
+            if (Item* item = player->EquipNewItem(gearTemplate->pos, gearTemplate->itemEntry, true))
+            {
+                ApplyBonus(player, item, PERM_ENCHANTMENT_SLOT, gearTemplate->enchant);
+                ApplyBonus(player, item, BONUS_ENCHANTMENT_SLOT, gearTemplate->bonusEnchant);
+                ApplyBonus(player, item, PRISMATIC_ENCHANTMENT_SLOT, gearTemplate->prismaticEnchant);
+                ApplyBonus(player, item, SOCK_ENCHANTMENT_SLOT_2, gearTemplate->socket2);
+                ApplyBonus(player, item, SOCK_ENCHANTMENT_SLOT_3, gearTemplate->socket3);
+                ApplyBonus(player, item, SOCK_ENCHANTMENT_SLOT, gearTemplate->socket1);
+            }
         }
     }
 }
 
 void sTemplateNPC::LoadTalentsContainer()
 {
-    for (TalentContainer::const_iterator itr = m_TalentContainer.begin(); itr != m_TalentContainer.end(); ++itr)
-        delete* itr;
-
-    m_TalentContainer.clear();
+    for (auto* talent : talentContainer)
+        delete talent;
+    talentContainer.clear();
 
     uint32 oldMSTime = getMSTime();
     uint32 count = 0;
@@ -140,7 +146,7 @@ void sTemplateNPC::LoadTalentsContainer()
 
     do
     {
-        Field *fields = result->Fetch();
+        Field* fields = result->Fetch();
 
         TalentTemplate *pTalent = new TalentTemplate;
 
@@ -148,7 +154,7 @@ void sTemplateNPC::LoadTalentsContainer()
         pTalent->playerSpec = fields[1].Get<std::string>();
         pTalent->talentId = fields[2].Get<uint32>();
 
-        m_TalentContainer.push_back(pTalent);
+        talentContainer.push_back(pTalent);
         ++count;
     } while (result->NextRow());
     LOG_INFO("module", ">> TEMPLATE NPC: Loaded {} talent templates in {} ms.", count, GetMSTimeDiffToNow(oldMSTime));
@@ -156,10 +162,9 @@ void sTemplateNPC::LoadTalentsContainer()
 
 void sTemplateNPC::LoadGlyphsContainer()
 {
-    for (GlyphContainer::const_iterator itr = m_GlyphContainer.begin(); itr != m_GlyphContainer.end(); ++itr)
-        delete* itr;
-
-    m_GlyphContainer.clear();
+    for (auto* glyph : glyphContainer)
+        delete glyph;
+    glyphContainer.clear();
 
     QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `slot`, `glyph` FROM `template_npc_glyphs`");
 
@@ -176,14 +181,14 @@ void sTemplateNPC::LoadGlyphsContainer()
     {
         Field* fields = result->Fetch();
 
-        GlyphTemplate* pGlyph = new GlyphTemplate;
+        GlyphTemplate* glyph = new GlyphTemplate;
 
-        pGlyph->playerClass = fields[0].Get<std::string>();
-        pGlyph->playerSpec = fields[1].Get<std::string>();
-        pGlyph->slot = fields[2].Get<uint8>();
-        pGlyph->glyph = fields[3].Get<uint32>();
+        glyph->playerClass = fields[0].Get<std::string>();
+        glyph->playerSpec = fields[1].Get<std::string>();
+        glyph->slot = fields[2].Get<uint8>();
+        glyph->glyph = fields[3].Get<uint32>();
 
-        m_GlyphContainer.push_back(pGlyph);
+        glyphContainer.push_back(glyph);
         ++count;
     } while (result->NextRow());
 
@@ -192,10 +197,9 @@ void sTemplateNPC::LoadGlyphsContainer()
 
 void sTemplateNPC::LoadGearContainer()
 {
-    for (GearContainer::const_iterator itr = m_GearContainer.begin(); itr != m_GearContainer.end(); ++itr)
-        delete* itr;
-
-    m_GearContainer.clear();
+    for (auto* gear : gearContainer)
+        delete gear;
+    gearContainer.clear();
 
     QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `playerRaceMask`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant` FROM `template_npc_gear`");
 
@@ -212,21 +216,21 @@ void sTemplateNPC::LoadGearContainer()
     {
         Field* fields = result->Fetch();
 
-        GearTemplate* pItem = new GearTemplate;
+        GearTemplate* item = new GearTemplate;
 
-        pItem->playerClass = fields[0].Get<std::string>();
-        pItem->playerSpec = fields[1].Get<std::string>();
-        pItem->playerRaceMask = fields[2].Get<uint32>();
-        pItem->pos = fields[3].Get<uint8>();
-        pItem->itemEntry = fields[4].Get<uint32>();
-        pItem->enchant = fields[5].Get<uint32>();
-        pItem->socket1 = fields[6].Get<uint32>();
-        pItem->socket2 = fields[7].Get<uint32>();
-        pItem->socket3 = fields[8].Get<uint32>();
-        pItem->bonusEnchant = fields[9].Get<uint32>();
-        pItem->prismaticEnchant = fields[10].Get<uint32>();
+        item->playerClass = fields[0].Get<std::string>();
+        item->playerSpec = fields[1].Get<std::string>();
+        item->playerRaceMask = fields[2].Get<uint32>();
+        item->pos = fields[3].Get<uint8>();
+        item->itemEntry = fields[4].Get<uint32>();
+        item->enchant = fields[5].Get<uint32>();
+        item->socket1 = fields[6].Get<uint32>();
+        item->socket2 = fields[7].Get<uint32>();
+        item->socket3 = fields[8].Get<uint32>();
+        item->bonusEnchant = fields[9].Get<uint32>();
+        item->prismaticEnchant = fields[10].Get<uint32>();
 
-        m_GearContainer.push_back(pItem);
+        gearContainer.push_back(item);
         ++count;
     } while (result->NextRow());
     LOG_INFO("module", ">> TEMPLATE NPC: Loaded {} gear templates in {} ms.", count, GetMSTimeDiffToNow(oldMSTime));
@@ -234,10 +238,9 @@ void sTemplateNPC::LoadGearContainer()
 
 void sTemplateNPC::LoadIndexContainer()
 {
-    for (IndexContainer::const_iterator itr = m_IndexContainer.begin(); itr != m_IndexContainer.end(); ++itr)
-        delete* itr;
-
-    m_IndexContainer.clear();
+    for (auto* index : indexContainer)
+        delete index;
+    indexContainer.clear();
 
     QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel` FROM `template_npc_index` ORDER BY `gossipAction`;");
 
@@ -260,11 +263,11 @@ void sTemplateNPC::LoadIndexContainer()
         pIndex->playerSpec = fields[1].Get<std::string>();
         pIndex->gossipAction = fields[2].Get<uint32>();
         pIndex->gossipText = fields[3].Get<std::string>();
-        pIndex->gearMask = fields[4].Get<uint32>();
+        pIndex->gearMask = static_cast<TemplateFlag>(fields[4].Get<uint32>());
         pIndex->minLevel = fields[5].Get<uint32>();
         pIndex->maxLevel = fields[6].Get<uint32>();
 
-        m_IndexContainer.push_back(pIndex);
+        indexContainer.push_back(pIndex);
         ++count;
     } while (result->NextRow());
     LOG_INFO("module", ">> TEMPLATE NPC: Loaded {} index templates in {} ms.", count, GetMSTimeDiffToNow(oldMSTime));
@@ -277,7 +280,7 @@ std::string sTemplateNPC::GetClassString(Player* player)
 
 bool sTemplateNPC::OverwriteTemplate(Player* player, std::string& playerSpecStr)
 {
-    // Delete old talent, glyph, and gear templates before extracting new ones
+    // Delete old talent, glyph, and gear ,templates before extracting new ones
     CharacterDatabase.Execute("DELETE FROM `template_npc_talents` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
     CharacterDatabase.Execute("DELETE FROM `template_npc_glyphs` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
     CharacterDatabase.Execute("DELETE FROM `template_npc_gear` WHERE `playerClass`='{}' AND `playerSpec`='{}' AND `playerRaceMask` & {}", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask());
@@ -343,7 +346,7 @@ void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, std::string& player
             continue;
         }
 
-        Field *fields = result->Fetch();
+        Field* fields = result->Fetch();
         uint32 glyph1 = fields[0].Get<uint32>();
         uint32 glyph2 = fields[1].Get<uint32>();
         uint32 glyph3 = fields[2].Get<uint32>();
@@ -397,12 +400,12 @@ public:
 
     bool OnGossipHello(Player* player, Creature* creature)
     {
-        for (IndexContainer::const_iterator itr = sTemplateNpcMgr->m_IndexContainer.begin(); itr != sTemplateNpcMgr->m_IndexContainer.end(); ++itr)
+        for (auto const& indexTemplate : sTemplateNpcMgr->indexContainer)
         {
-            if ((*itr)->playerClass == sTemplateNpcMgr->GetClassString(player).c_str() &&
-                ((*itr)->minLevel <= player->GetLevel() && player->GetLevel() <= (*itr)->maxLevel))
+            if (indexTemplate->playerClass == sTemplateNpcMgr->GetClassString(player).c_str() &&
+                (indexTemplate->minLevel <= player->GetLevel() && player->GetLevel() <= indexTemplate->maxLevel))
             {
-                AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, (*itr)->gossipText, GOSSIP_SENDER_MAIN, (*itr)->gossipAction);
+                AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, indexTemplate->gossipText, GOSSIP_SENDER_MAIN, indexTemplate->gossipAction);
             }
         }
         // Extra gossip
@@ -532,14 +535,14 @@ public:
         if (!player || !creature)
             return false;
 
-        for (IndexContainer::const_iterator itr = sTemplateNpcMgr->m_IndexContainer.begin(); itr != sTemplateNpcMgr->m_IndexContainer.end(); ++itr)
+        for (auto const& indexTemplate : sTemplateNpcMgr->indexContainer)
         {
-            if ((*itr)->gossipAction == uiAction)
+            if (indexTemplate->gossipAction == uiAction)
             {
-                sTemplateNpcMgr->sTalentsSpec = (*itr)->playerSpec;
-                if ((*itr)->gearMask & 1)
+                sTemplateNpcMgr->sTalentsSpec = indexTemplate->playerSpec;
+                if (indexTemplate->gearMask == TEMPLATE_APPLY_GEAR_AND_TALENTS)
                     EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-                else if ((*itr)->gearMask & 2)
+                else if (indexTemplate->gearMask == TEMPLATE_APPLY_TALENTS)
                     LearnOnlyTalentsAndGlyphs(player, sTemplateNpcMgr->sTalentsSpec);
                 CloseGossipMenuFor(player);
                 break;
@@ -578,6 +581,7 @@ public:
                 {
                     player->DestroyItem(INVENTORY_SLOT_BAG_0, i, true);
                 }
+                player->SaveToDB(false, false);
                 player->GetSession()->SendAreaTriggerMessage("Your equipped gear has been destroyed.");
                 CloseGossipMenuFor(player);
                 break;

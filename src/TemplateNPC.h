@@ -193,13 +193,21 @@ struct GearTemplate
     uint32 prismaticEnchant;
 };
 
+enum TemplateFlag
+{
+    TEMPLATE_APPLY_GEAR = 0x1,
+    TEMPLATE_APPLY_TALENTS = 0x2,
+
+    TEMPLATE_APPLY_GEAR_AND_TALENTS = TEMPLATE_APPLY_GEAR | TEMPLATE_APPLY_TALENTS,
+};
+
 struct IndexTemplate
 {
     std::string playerClass;
     std::string playerSpec;
     uint32 gossipAction;
     std::string gossipText;
-    uint32 gearMask;
+    TemplateFlag gearMask;
     uint32 minLevel;
     uint32 maxLevel;
 };
@@ -226,26 +234,26 @@ public:
     void RemoveAllGlyphs(Player* player);
     void ApplyBonus(Player* player, Item* item, EnchantmentSlot slot, uint32 bonusEntry);
 
-    bool OverwriteTemplate(Player* /*player*/, std::string& /*playerSpecStr*/);
-    void ExtractGearTemplateToDB(Player* /*player*/, std::string& /*playerSpecStr*/);
-    void ExtractTalentTemplateToDB(Player* /*player*/, std::string& /*playerSpecStr*/);
-    void ExtractGlyphsTemplateToDB(Player* /*player*/, std::string& /*playerSpecStr*/);
-    void InsertIndexEntryToDB(Player* /*player*/, std::string& /*playerSpecStr*/);
-    bool CanEquipTemplate(Player* /*player*/, std::string& /*playerSpecStr*/);
+    bool OverwriteTemplate(Player* player, std::string& playerSpecStr);
+    void ExtractGearTemplateToDB(Player* player, std::string& playerSpecStr);
+    void ExtractTalentTemplateToDB(Player* player, std::string& playerSpecStr);
+    void ExtractGlyphsTemplateToDB(Player* player, std::string& playerSpecStr);
+    void InsertIndexEntryToDB(Player* player, std::string& playerSpecStr);
+    bool CanEquipTemplate(Player* player, std::string& playerSpecStr);
 
-    std::string GetClassString(Player* /*player*/);
+    std::string GetClassString(Player* player);
     std::string sTalentsSpec;
 
-    void LearnTemplateTalents(Player* /*player*/);
-    void LearnTemplateGlyphs(Player* /*player*/);
-    void EquipTemplateGear(Player* /*player*/);
+    void LearnTemplateTalents(Player* player);
+    void LearnTemplateGlyphs(Player* player);
+    void EquipTemplateGear(Player* player);
 
-    void LearnPlateMailSpells(Player* /*player*/);
+    void LearnPlateMailSpells(Player* player);
 
-    TalentContainer m_TalentContainer;
-    GlyphContainer m_GlyphContainer;
-    GearContainer m_GearContainer;
-    IndexContainer m_IndexContainer;
+    TalentContainer talentContainer;
+    GlyphContainer glyphContainer;
+    GearContainer gearContainer;
+    IndexContainer indexContainer;
 
     bool enableResetTalents;
     bool enableRemoveAllGlyphs;
