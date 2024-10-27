@@ -1,24 +1,52 @@
 #ifndef TALENT_FUNCTIONS_H
 #define TALENT_FUNCTIONS_H
 
-#include "Define.h"
-#include "Player.h"
-#include "Item.h"
-#include "WorldSession.h"
-#include "ScriptMgr.h"
 #include "Creature.h"
+#include "Define.h"
+#include "Item.h"
 #include "ObjectMgr.h"
+#include "Player.h"
+#include "ScriptMgr.h"
+#include "WorldSession.h"
 
-#define SPELL_Amani_War_Bear 43688
-#define SPELL_Artisan_Riding 34091
-#define SPELL_Cold_Weather_Flying 54197
-#define SPELL_Teach_Learn_Talent_Specialization_Switches 63680
-#define SPELL_Learn_a_Second_Talent_Specialization 63624
 
-enum templateSpells
+#define MODULE_STRING "npc-talent-template"
+
+enum TemplateNpcMisc
 {
-    PLATE_MAIL = 750,
-    MAIL = 8737
+    TEMPLATE_NPC_FACTION_ASHTONGUE_DEATHSWORN = 1012,
+    TEMPLATE_NPC_REP_AMOUNT_EXALTED = 42000,
+};
+
+enum TemplateNpcStrings
+{
+    ERROR_NPC_TALENT_TEMPLATE_MUST_REMOVE_EQUIPPED = 1,
+    ERROR_NPC_TALENT_TEMPLATE_MUST_RESET_TALENTS = 2,
+    SUCCESS_NPC_TALENT_TEMPLATE_EQUIPPED_TEMPLATE = 3,
+    SUCCESS_NPC_TALENT_TEMPLATE_DESTROYED_EQUIPPED_GEAR = 4,
+    SUCCESS_NPC_TALENT_TEMPLATE_REMOVED_GLYPHS = 5,
+    SUCCESS_NPC_TALENT_TEMPLATE_COPIED = 6,
+    // Extract
+    ERROR_NPC_TALENT_TEMPLATE_EXTRACT_MUST_SPEND_ALL_TALENT_POINTS = 7,
+    ERROR_NPC_TALENT_TEMPLATE_EXTRACT_GET_GLYPHS = 8,
+    SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT = 9,
+    SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT_INFO = 10,
+    // Reload
+    FEEDBACK_NPC_TALENT_TEMPLATE_RELOADING = 11,
+    SUCCESS_NPC_TALENT_TEMPLATE_RELOADED = 12,
+};
+
+enum TemplateNpcSpells
+{
+    SPELL_BIG_BATTLE_BEAR = 51412, // default mount if no config
+    SPELL_ARTISAN_RIDING = 34091,
+    SPELL_COLD_WEATHER_FLYING = 54197,
+    SPELL_LEARN_A_SECOND_TALENT_SPECIALIZATION = 63624,
+    SPELL_MASTER_HAMMERSMITH = 17040,
+    SPELL_TEACH_LEARN_TALENT_SPECIALIZATION_SWITCHES = 63680,
+    // Armor proficiency
+    SPELL_PLATE_MAIL = 750,
+    SPELL_MAIL = 8737
 };
 
 enum WeaponProficiencies
@@ -202,7 +230,7 @@ enum GossipActions
     GOSSIP_ACTION_RESET_REMOVE_EQUIPPED_GEAR = 5004,
 };
 
-enum TemplateFlag
+enum TemplateFlags
 {
     TEMPLATE_APPLY_GEAR = 0x1,
     TEMPLATE_APPLY_GLYPHS = 0x2,
@@ -217,7 +245,7 @@ struct IndexTemplate
     std::string playerSpec;
     uint32 gossipAction;
     std::string gossipText;
-    TemplateFlag gearMask;
+    TemplateFlags gearMask;
     uint32 minLevel;
     uint32 maxLevel;
 };
@@ -255,8 +283,13 @@ public:
     std::string GetClassString(Player* player);
     std::string sTalentsSpec;
 
+    uint32 allianceMount;
+    uint32 hordeMount;
+
     void LearnTemplateTalents(Player* player);
     void LearnTemplateGlyphs(Player* player);
+    void SatisfyExtraGearRequirements(Player* player);
+    void ApplyTemplate(Player* player, TemplateFlags flag);
     void EquipTemplateGear(Player* player);
 
     void LearnPlateMailSpells(Player* player);

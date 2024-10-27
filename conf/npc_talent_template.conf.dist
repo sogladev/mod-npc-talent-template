@@ -8,11 +8,11 @@
 #
 #    NpcTalentTemplate.EnableResetTalents
 #        Description: Enables Gossip Option to reset talents
-#        Default:     0 - Disabled
-#                     1 - Enabled
+#        Default:     1 - Enabled
+#                     0 - Disabled
 #
 
-NpcTalentTemplate.EnableResetTalents = 0
+NpcTalentTemplate.EnableResetTalents = 1
 
 #
 #    NpcTalentTemplate.EnableRemoveAllGlyphs
@@ -31,3 +31,16 @@ NpcTalentTemplate.EnableRemoveAllGlyphs = 1
 #
 
 NpcTalentTemplate.EnableDestroyEquippedGear = 1
+
+#
+#    NpcTalentTemplate.AllianceMount
+#    NpcTalentTemplate.HordeMount
+#        Description:
+#        Default:     51412 - BigBattleBear
+#                     43688 - AmaniWarBear
+#                     19902 - SwiftZulianTiger
+#                     0 - Disable
+#
+
+NpcTalentTemplate.AllianceMount = 51412
+NpcTalentTemplate.HordeMount = 51412
