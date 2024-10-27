@@ -1,0 +1,33 @@
+#
+
+[worldserver]
+
+##########################################
+# Npc Talent Template module configuration
+##########################################
+#
+#    NpcTalentTemplate.EnableResetTalents
+#        Description: Enables Gossip Option to reset talents
+#        Default:     0 - Disabled
+#                     1 - Enabled
+#
+
+NpcTalentTemplate.EnableResetTalents = 0
+
+#
+#    NpcTalentTemplate.EnableRemoveAllGlyphs
+#        Description: Enables Gossip Option to Remove All Glyphs
+#        Default:     1 - Enabled
+#                     0 - Disabled
+#
+
+NpcTalentTemplate.EnableRemoveAllGlyphs = 1
+
+#
+#    NpcTalentTemplate.EnableDestroyEquippedGear
+#        Description: Enables Gossip Option to Destroy Equipped Gear
+#        Default:     1 - Enabled
+#                     0 - Disabled
+#
+
+NpcTalentTemplate.EnableDestroyEquippedGear = 1

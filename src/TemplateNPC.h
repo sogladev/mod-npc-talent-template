@@ -4,14 +4,8 @@
 #include "Define.h"
 #include "Player.h"
 #include "Item.h"
-#include "DBCStores.h"
-#include "Log.h"
-#include "DatabaseEnv.h"
 #include "WorldSession.h"
-#include "ScriptedGossip.h"
 #include "ScriptMgr.h"
-#include "ScriptedCreature.h"
-#include "GossipDef.h"
 #include "Creature.h"
 #include "ObjectMgr.h"
 
@@ -273,6 +267,10 @@ public:
     HumanGearContainer m_HumanGearContainer;
     AllianceGearContainer m_AllianceGearContainer;
     HordeGearContainer m_HordeGearContainer;
+
+    bool enableResetTalents;
+    bool enableRemoveAllGlyphs;
+    bool enableDestroyEquippedGear;
 };
 
 #define sTemplateNpcMgr sTemplateNPC::instance()
