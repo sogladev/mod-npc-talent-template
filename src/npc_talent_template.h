@@ -9,7 +9,6 @@
 #include "ScriptMgr.h"
 #include "WorldSession.h"
 
-
 #define MODULE_STRING "npc-talent-template"
 
 enum TemplateNpcMisc
@@ -38,7 +37,7 @@ enum TemplateNpcStrings
 
 enum TemplateNpcSpells
 {
-    SPELL_BIG_BATTLE_BEAR = 51412, // default mount if no config
+    SPELL_BIG_BATTLE_BEAR = 51412, // Default mount if no config
     SPELL_ARTISAN_RIDING = 34091,
     SPELL_COLD_WEATHER_FLYING = 54197,
     SPELL_LEARN_A_SECOND_TALENT_SPECIALIZATION = 63624,
@@ -283,9 +282,6 @@ public:
     std::string GetClassString(Player* player);
     std::string sTalentsSpec;
 
-    uint32 allianceMount;
-    uint32 hordeMount;
-
     void LearnTemplateTalents(Player* player);
     void LearnTemplateGlyphs(Player* player);
     void SatisfyExtraGearRequirements(Player* player);
@@ -302,6 +298,8 @@ public:
     bool enableResetTalents;
     bool enableRemoveAllGlyphs;
     bool enableDestroyEquippedGear;
+    uint32 allianceMount;
+    uint32 hordeMount;
 };
 
 #define sTemplateNpcMgr sTemplateNPC::instance()
