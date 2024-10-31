@@ -73,7 +73,7 @@ void sTemplateNPC::LearnTemplateTalents(Player* player)
 {
     for (auto const& talentTemplate : talentContainer)
     {
-        if (talentTemplate->playerClass == GetClassString(player).c_str() && talentTemplate->playerSpec == sTalentsSpec)
+        if (talentTemplate->playerClass == GetClassString(player).c_str() && talentTemplate->playerSpec == sTalents)
         {
             player->learnSpellHighRank(talentTemplate->talentId);
             player->addTalent(talentTemplate->talentId, player->GetActiveSpecMask(), 0);
@@ -86,7 +86,7 @@ void sTemplateNPC::LearnTemplateGlyphs(Player* player)
 {
     for (auto const& glyphTemplate : glyphContainer)
     {
-        if (glyphTemplate->playerClass == GetClassString(player).c_str() && glyphTemplate->playerSpec == sTalentsSpec)
+        if (glyphTemplate->playerClass == GetClassString(player).c_str() && glyphTemplate->playerSpec == sGlyphs)
         {
             ApplyGlyph(player, glyphTemplate->slot, glyphTemplate->glyph);
         }
@@ -102,7 +102,7 @@ void sTemplateNPC::EquipTemplateGear(Player* player)
     for (auto const& gearTemplate : gearContainer)
     {
         if (gearTemplate->playerClass == GetClassString(player).c_str() &&
-            gearTemplate->playerSpec == sTalentsSpec &&
+            gearTemplate->playerSpec == sGear &&
             gearTemplate->playerRaceMask & player->getRaceMask())
         {
             if (Item* item = player->EquipNewItem(gearTemplate->pos, gearTemplate->itemEntry, true))
@@ -234,7 +234,7 @@ void sTemplateNPC::LoadIndexContainer()
         delete index;
     indexContainer.clear();
 
-    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel` FROM `mod_npc_talent_template_index` ORDER BY `gossipAction`;");
+    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel`, `gearOverride`, `glyphOverride`, `talentOverride` FROM `mod_npc_talent_template_index` ORDER BY `gossipAction`;");
 
     uint32 oldMSTime = getMSTime();
     uint32 count = 0;
@@ -258,6 +258,15 @@ void sTemplateNPC::LoadIndexContainer()
         pIndex->gearMask = static_cast<TemplateFlags>(fields[4].Get<uint32>());
         pIndex->minLevel = fields[5].Get<uint32>();
         pIndex->maxLevel = fields[6].Get<uint32>();
+        pIndex->gearOverride = fields[7].Get<std::string>();
+        if (pIndex->gearOverride.empty())
+            pIndex->gearOverride = pIndex->playerSpec;
+        pIndex->glyphOverride = fields[8].Get<std::string>();
+        if (pIndex->glyphOverride.empty())
+            pIndex->glyphOverride = pIndex->playerSpec;
+        pIndex->talentOverride = fields[9].Get<std::string>();
+        if (pIndex->talentOverride.empty())
+            pIndex->talentOverride = pIndex->playerSpec;
 
         indexContainer.push_back(pIndex);
         ++count;
@@ -401,13 +410,13 @@ void sTemplateNPC::SatisfyExtraGearRequirements(Player* player)
         case CLASS_WARRIOR:
         case CLASS_SHAMAN:
             if (!player->HasSpell(SPELL_MASTER_HAMMERSMITH) &&
-                (sTalentsSpec == "Fury70PvET6" || sTalentsSpec == "Enhancement70PvET6"))
+                (sGear == "Fury70PvET6" || sGear == "Enhancement70PvET6"))
             {
                 player->learnSpell(SPELL_MASTER_HAMMERSMITH);
             }
             break;
         case CLASS_DRUID:
-            if ((sTalentsSpec == "Restoration70PvET6") &&
+            if ((sGear == "Restoration70PvET6") &&
                 (player->GetReputationRank(TEMPLATE_NPC_FACTION_ASHTONGUE_DEATHSWORN) < REP_EXALTED))
             {
                 player->GetReputationMgr().SetReputation(sFactionStore.LookupEntry(TEMPLATE_NPC_FACTION_ASHTONGUE_DEATHSWORN), TEMPLATE_NPC_REP_AMOUNT_EXALTED);
@@ -439,12 +448,6 @@ void sTemplateNPC::ApplyTemplate(Player* player, TemplateFlags flag)
         return;
     }
 
-    if (flag & TEMPLATE_APPLY_GLYPHS)
-        sTemplateNpcMgr->LearnTemplateGlyphs(player);
-
-    if (flag & TEMPLATE_APPLY_TALENTS)
-        sTemplateNpcMgr->LearnTemplateTalents(player);
-
     if (flag & TEMPLATE_APPLY_GEAR)
     {
         player->_RemoveAllItemMods();
@@ -452,6 +455,12 @@ void sTemplateNPC::ApplyTemplate(Player* player, TemplateFlags flag)
         sTemplateNpcMgr->SatisfyExtraGearRequirements(player);
         sTemplateNpcMgr->EquipTemplateGear(player);
     }
+
+    if (flag & TEMPLATE_APPLY_GLYPHS)
+        sTemplateNpcMgr->LearnTemplateGlyphs(player);
+
+    if (flag & TEMPLATE_APPLY_TALENTS)
+        sTemplateNpcMgr->LearnTemplateTalents(player);
 
     if (flag & (TEMPLATE_APPLY_TALENTS | TEMPLATE_APPLY_GEAR))
         player->UpdateTitansGrip();
@@ -528,6 +537,9 @@ public:
             if (indexTemplate->gossipAction == uiAction)
             {
                 sTemplateNpcMgr->sTalentsSpec = indexTemplate->playerSpec;
+                sTemplateNpcMgr->sGear = indexTemplate->gearOverride;
+                sTemplateNpcMgr->sGlyphs = indexTemplate->glyphOverride;
+                sTemplateNpcMgr->sTalents = indexTemplate->talentOverride;
                 sTemplateNpcMgr->ApplyTemplate(player, indexTemplate->gearMask);
                 CloseGossipMenuFor(player);
                 break;

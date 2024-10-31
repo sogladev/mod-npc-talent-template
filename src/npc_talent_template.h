@@ -247,6 +247,9 @@ struct IndexTemplate
     TemplateFlags gearMask;
     uint32 minLevel;
     uint32 maxLevel;
+    std::string gearOverride; // use playerSpec if not set
+    std::string glyphOverride; // use playerSpec if not set
+    std::string talentOverride; // use playerSpec if not set
 };
 
 typedef std::vector<TalentTemplate*> TalentContainer;
@@ -281,6 +284,9 @@ public:
 
     std::string GetClassString(Player* player);
     std::string sTalentsSpec;
+    std::string sGear;
+    std::string sGlyphs;
+    std::string sTalents;
 
     void LearnTemplateTalents(Player* player);
     void LearnTemplateGlyphs(Player* player);
@@ -290,9 +296,9 @@ public:
 
     void LearnPlateMailSpells(Player* player);
 
-    TalentContainer talentContainer;
-    GlyphContainer glyphContainer;
     GearContainer gearContainer;
+    GlyphContainer glyphContainer;
+    TalentContainer talentContainer;
     IndexContainer indexContainer;
 
     bool enableResetTalents;

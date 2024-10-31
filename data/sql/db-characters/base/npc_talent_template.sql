@@ -36,5 +36,8 @@ CREATE TABLE IF NOT EXISTS `mod_npc_talent_template_index` (
   `gossipText` varchar(200) NOT NULL,
   `gearMask` int unsigned NOT NULL DEFAULT '0',
   `minLevel` int unsigned NOT NULL DEFAULT '0',
-  `maxLevel` int unsigned NOT NULL DEFAULT '0'
+  `maxLevel` int unsigned NOT NULL DEFAULT '0',
+  `gearOverride` varchar(50) NOT NULL DEFAULT '',
+  `glyphOverride` varchar(50) NOT NULL DEFAULT '',
+  `talentOverride` varchar(50) NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=UTF8MB4 COMMENT='Templates';
