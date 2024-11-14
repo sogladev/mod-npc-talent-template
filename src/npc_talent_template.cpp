@@ -576,6 +576,10 @@ public:
             case GOSSIP_ACTION_RESET_REMOVE_EQUIPPED_GEAR:
                 for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
                 {
+                    // Setting state to CHANGED is required here to avoid inventory save errors after using DestroyItem and EquipItem.
+                    // The error occurs because the item slot information is not updated correctly
+                    if (Item* item = player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+                        item->SetState(ITEM_CHANGED, player); // fixes
                     player->DestroyItem(INVENTORY_SLOT_BAG_0, i, true);
                 }
                 player->SaveToDB(false, false);
