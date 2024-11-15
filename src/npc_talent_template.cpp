@@ -390,9 +390,7 @@ void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, const std::string& 
 
 bool sTemplateNPC::HasSpentTalentPoints(Player* player)
 {
-    if (player->GetFreeTalentPoints() != player->CalculateTalentsPoints())
-        return true;
-    return false;
+    return static_cast<bool>(player->GetFreeTalentPoints() != player->CalculateTalentsPoints());
 }
 
 bool sTemplateNPC::IsWearingAnyGear(Player* player)
