@@ -319,22 +319,20 @@ void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, const std::string& 
     {
         return;
     }
-    else if (player->GetFreeTalentPoints() > 0)
+    if (player->GetFreeTalentPoints() > 0)
     {
         player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_EXTRACT_MUST_SPEND_ALL_TALENT_POINTS)->c_str());
         ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_EXTRACT_MUST_SPEND_ALL_TALENT_POINTS);
         return;
     }
-    else
-    {
-        do
-        {
-            Field* fields = result->Fetch();
-            uint32 spell = fields[0].Get<uint32>();
 
-            CharacterDatabase.Execute("INSERT INTO `mod_npc_talent_template_talents` (`playerClass`, `playerSpec`, `talentId`) VALUES ('{}', '{}', {})", GetClassString(player).c_str(), playerSpecStr.c_str(), spell);
-        } while (result->NextRow());
-    }
+    do
+    {
+        Field* fields = result->Fetch();
+        uint32 spell = fields[0].Get<uint32>();
+
+        CharacterDatabase.Execute("INSERT INTO `mod_npc_talent_template_talents` (`playerClass`, `playerSpec`, `talentId`) VALUES ('{}', '{}', {})", GetClassString(player).c_str(), playerSpecStr.c_str(), spell);
+    } while (result->NextRow());
 }
 
 void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, const std::string& playerSpecStr)
