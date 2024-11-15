@@ -527,10 +527,10 @@ public:
 
     bool OnGossipSelect(Player* player, Creature* creature, uint32 /*uiSender*/, uint32 uiAction)
     {
-        player->PlayerTalkClass->ClearMenus();
-
         if (!player || !creature)
             return false;
+
+        player->PlayerTalkClass->ClearMenus();
 
         for (auto const& indexTemplate : sTemplateNpcMgr->indexContainer)
         {
