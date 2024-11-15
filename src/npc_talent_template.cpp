@@ -28,7 +28,7 @@ void sTemplateNPC::ApplyBonus(Player* player, Item* item, EnchantmentSlot slot, 
     if (!item)
         return;
 
-    if (!bonusEntry || bonusEntry == 0)
+    if (!bonusEntry)
         return;
 
     player->ApplyEnchantment(item, slot, false);
