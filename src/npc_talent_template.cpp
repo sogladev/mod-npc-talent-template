@@ -280,7 +280,7 @@ std::string sTemplateNPC::GetClassString(Player* player)
     return EnumUtils::ToTitle(Classes(player->getClass()));
 }
 
-bool sTemplateNPC::OverwriteTemplate(Player* player, std::string& playerSpecStr)
+bool sTemplateNPC::OverwriteTemplate(Player* player, const std::string& playerSpecStr)
 {
     // Delete old talent, glyph, and gear templates before extracting new ones
     CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_talents` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
@@ -290,7 +290,7 @@ bool sTemplateNPC::OverwriteTemplate(Player* player, std::string& playerSpecStr)
     return false;
 }
 
-void sTemplateNPC::ExtractGearTemplateToDB(Player* player, std::string& playerSpecStr)
+void sTemplateNPC::ExtractGearTemplateToDB(Player* player, const std::string& playerSpecStr)
 {
     for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
     {
@@ -303,7 +303,7 @@ void sTemplateNPC::ExtractGearTemplateToDB(Player* player, std::string& playerSp
     }
 }
 
-void sTemplateNPC::InsertIndexEntryToDB(Player* player, std::string& playerSpecStr)
+void sTemplateNPC::InsertIndexEntryToDB(Player* player, const std::string& playerSpecStr)
 {
     CharacterDatabase.Execute(
         "INSERT INTO `mod_npc_talent_template_index` (`playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel`) VALUES ('{}', '{}', {}, '{}', {}, {}, {});",
@@ -311,7 +311,7 @@ void sTemplateNPC::InsertIndexEntryToDB(Player* player, std::string& playerSpecS
     );
 }
 
-void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, std::string& playerSpecStr)
+void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, const std::string& playerSpecStr)
 {
     QueryResult result = CharacterDatabase.Query("SELECT `spell` FROM `character_talent` WHERE `guid`={} AND `specMask`&{}", player->GetGUID().GetCounter(), player->GetActiveSpecMask());
 
@@ -337,7 +337,7 @@ void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, std::string& player
     }
 }
 
-void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, std::string& playerSpecStr)
+void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, const std::string& playerSpecStr)
 {
     QueryResult result = CharacterDatabase.Query("SELECT `glyph1`, `glyph2`, `glyph3`, `glyph4`, `glyph5`, `glyph6` FROM `character_glyphs` WHERE `guid`={} AND `talentGroup`={}", player->GetGUID().GetCounter(), player->GetActiveSpec());
 
