@@ -1,24 +1,46 @@
 #ifndef TALENT_FUNCTIONS_H
 #define TALENT_FUNCTIONS_H
 
-#include "Define.h"
 #include "Player.h"
-#include "Item.h"
-#include "WorldSession.h"
 #include "ScriptMgr.h"
-#include "Creature.h"
-#include "ObjectMgr.h"
 
-#define SPELL_Amani_War_Bear 43688
-#define SPELL_Artisan_Riding 34091
-#define SPELL_Cold_Weather_Flying 54197
-#define SPELL_Teach_Learn_Talent_Specialization_Switches 63680
-#define SPELL_Learn_a_Second_Talent_Specialization 63624
+#define MODULE_STRING "npc-talent-template"
 
-enum templateSpells
+enum TemplateNpcMisc
 {
-    PLATE_MAIL = 750,
-    MAIL = 8737
+    TEMPLATE_NPC_FACTION_ASHTONGUE_DEATHSWORN = 1012,
+    TEMPLATE_NPC_REP_AMOUNT_EXALTED = 42000,
+};
+
+enum TemplateNpcStrings
+{
+    ERROR_NPC_TALENT_TEMPLATE_MUST_REMOVE_EQUIPPED = 1,
+    ERROR_NPC_TALENT_TEMPLATE_MUST_RESET_TALENTS = 2,
+    SUCCESS_NPC_TALENT_TEMPLATE_EQUIPPED_TEMPLATE = 3,
+    SUCCESS_NPC_TALENT_TEMPLATE_DESTROYED_EQUIPPED_GEAR = 4,
+    SUCCESS_NPC_TALENT_TEMPLATE_REMOVED_GLYPHS = 5,
+    SUCCESS_NPC_TALENT_TEMPLATE_COPIED = 6,
+    // Extract
+    ERROR_NPC_TALENT_TEMPLATE_EXTRACT_MUST_SPEND_ALL_TALENT_POINTS = 7,
+    ERROR_NPC_TALENT_TEMPLATE_EXTRACT_GET_GLYPHS = 8,
+    SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT = 9,
+    SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT_INFO = 10,
+    // Reload
+    FEEDBACK_NPC_TALENT_TEMPLATE_RELOADING = 11,
+    SUCCESS_NPC_TALENT_TEMPLATE_RELOADED = 12,
+};
+
+enum TemplateNpcSpells
+{
+    SPELL_BIG_BATTLE_BEAR = 51412, // Default mount if no config
+    SPELL_ARTISAN_RIDING = 34091,
+    SPELL_COLD_WEATHER_FLYING = 54197,
+    SPELL_LEARN_A_SECOND_TALENT_SPECIALIZATION = 63624,
+    SPELL_MASTER_HAMMERSMITH = 17040,
+    SPELL_TEACH_LEARN_TALENT_SPECIALIZATION_SWITCHES = 63680,
+    // Armor proficiency
+    SPELL_PLATE_MAIL = 750,
+    SPELL_MAIL = 8737
 };
 
 enum WeaponProficiencies
@@ -178,10 +200,11 @@ struct GlyphTemplate
     uint32 glyph;
 };
 
-struct HumanGearTemplate
+struct GearTemplate
 {
     std::string playerClass;
     std::string playerSpec;
+    uint32 playerRaceMask;
     uint8 pos;
     uint32 itemEntry;
     uint32 enchant;
@@ -192,40 +215,42 @@ struct HumanGearTemplate
     uint32 prismaticEnchant;
 };
 
-struct AllianceGearTemplate
+enum GossipActions
+{
+    GOSSIP_ACTION_SPACER = 5000, // ---------
+    GOSSIP_ACTION_RESET_TALENTS = 5001,
+    GOSSIP_ACTION_RESET_PET_TALENTS = 5002,
+    GOSSIP_ACTION_RESET_REMOVE_GLYPHS = 5003,
+    GOSSIP_ACTION_RESET_REMOVE_EQUIPPED_GEAR = 5004,
+};
+
+enum TemplateFlags
+{
+    TEMPLATE_APPLY_GEAR = 0x1,
+    TEMPLATE_APPLY_GLYPHS = 0x2,
+    TEMPLATE_APPLY_TALENTS = 0x4,
+
+    TEMPLATE_APPLY_ALL = TEMPLATE_APPLY_GEAR | TEMPLATE_APPLY_TALENTS | TEMPLATE_APPLY_GLYPHS,
+};
+
+struct IndexTemplate
 {
     std::string playerClass;
     std::string playerSpec;
-    uint8 pos;
-    uint32 itemEntry;
-    uint32 enchant;
-    uint32 socket1;
-    uint32 socket2;
-    uint32 socket3;
-    uint32 bonusEnchant;
-    uint32 prismaticEnchant;
+    uint32 gossipAction;
+    std::string gossipText;
+    TemplateFlags mask;
+    uint32 minLevel;
+    uint32 maxLevel;
+    std::string gearOverride; // use playerSpec if not set
+    std::string glyphOverride; // use playerSpec if not set
+    std::string talentOverride; // use playerSpec if not set
 };
-
-struct HordeGearTemplate
-{
-    std::string playerClass;
-    std::string playerSpec;
-    uint8 pos;
-    uint32 itemEntry;
-    uint32 enchant;
-    uint32 socket1;
-    uint32 socket2;
-    uint32 socket3;
-    uint32 bonusEnchant;
-    uint32 prismaticEnchant;
-};
-
-typedef std::vector<HumanGearTemplate*> HumanGearContainer;
-typedef std::vector<AllianceGearTemplate*> AllianceGearContainer;
-typedef std::vector<HordeGearTemplate*> HordeGearContainer;
 
 typedef std::vector<TalentTemplate*> TalentContainer;
 typedef std::vector<GlyphTemplate*> GlyphContainer;
+typedef std::vector<GearTemplate*> GearContainer;
+typedef std::vector<IndexTemplate*> IndexContainer;
 
 class sTemplateNPC
 {
@@ -237,40 +262,41 @@ public:
     }
     void LoadTalentsContainer();
     void LoadGlyphsContainer();
-
-    void LoadHumanGearContainer();
-    void LoadAllianceGearContainer();
-    void LoadHordeGearContainer();
+    void LoadGearContainer();
+    void LoadIndexContainer();
 
     void ApplyGlyph(Player* player, uint8 slot, uint32 glyphID);
     void RemoveAllGlyphs(Player* player);
     void ApplyBonus(Player* player, Item* item, EnchantmentSlot slot, uint32 bonusEntry);
 
-    bool OverwriteTemplate(Player* /*player*/, std::string& /*playerSpecStr*/);
-    void ExtractGearTemplateToDB(Player* /*player*/, std::string& /*playerSpecStr*/);
-    void ExtractTalentTemplateToDB(Player* /*player*/, std::string& /*playerSpecStr*/);
-    void ExtractGlyphsTemplateToDB(Player* /*player*/, std::string& /*playerSpecStr*/);
-    bool CanEquipTemplate(Player* /*player*/, std::string& /*playerSpecStr*/);
+    bool OverwriteTemplate(Player* player, const std::string& playerSpec);
+    void ExtractGearTemplateToDB(Player* player, const std::string& playerSpec);
+    void ExtractTalentTemplateToDB(Player* player, const std::string& playerSpec);
+    void ExtractGlyphsTemplateToDB(Player* player, const std::string& playerSpec);
+    void InsertIndexEntryToDB(Player* player, const std::string& playerSpec);
+    bool IsWearingAnyGear(Player* player);
+    bool HasSpentTalentPoints(Player* player);
 
-    std::string GetClassString(Player* /*player*/);
-    std::string sTalentsSpec;
+    std::string GetClassString(Player* player);
 
-    void LearnTemplateTalents(Player* /*player*/);
-    void LearnTemplateGlyphs(Player* /*player*/);
-    void EquipTemplateGear(Player* /*player*/);
+    void EquipTemplateGear(Player* player, const std::string& sGear);
+    void SatisfyExtraGearRequirements(Player* player, const std::string& sGear);
+    void LearnTemplateTalents(Player* player, const std::string& sTalents);
+    void LearnTemplateGlyphs(Player* player, const std::string& sGlyphs);
+    void ApplyTemplate(Player* player, IndexTemplate* indexTemplate);
 
-    void LearnPlateMailSpells(Player* /*player*/);
+    void LearnPlateMailSpells(Player* player);
 
-    GlyphContainer m_GlyphContainer;
-    TalentContainer m_TalentContainer;
-
-    HumanGearContainer m_HumanGearContainer;
-    AllianceGearContainer m_AllianceGearContainer;
-    HordeGearContainer m_HordeGearContainer;
+    GearContainer gearContainer;
+    GlyphContainer glyphContainer;
+    TalentContainer talentContainer;
+    IndexContainer indexContainer;
 
     bool enableResetTalents;
     bool enableRemoveAllGlyphs;
     bool enableDestroyEquippedGear;
+    uint32 allianceMount;
+    uint32 hordeMount;
 };
 
 #define sTemplateNpcMgr sTemplateNPC::instance()
