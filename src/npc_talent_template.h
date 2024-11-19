@@ -1,13 +1,8 @@
 #ifndef TALENT_FUNCTIONS_H
 #define TALENT_FUNCTIONS_H
 
-#include "Creature.h"
-#include "Define.h"
-#include "Item.h"
-#include "ObjectMgr.h"
 #include "Player.h"
 #include "ScriptMgr.h"
-#include "WorldSession.h"
 
 #define MODULE_STRING "npc-talent-template"
 

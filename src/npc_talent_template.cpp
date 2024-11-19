@@ -1,8 +1,8 @@
 #include "Chat.h"
+#include "Creature.h"
 #include "Config.h"
 #include "ReputationMgr.h"
 #include "ScriptedGossip.h"
-#include "SharedDefines.h"
 #include "npc_talent_template.h"
 
 #define DEFAULT_GOSSIP_ACTION_ENTRY 9999 // default value for gossipAction when creating new template */
