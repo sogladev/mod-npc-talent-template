@@ -528,21 +528,18 @@ public:
 
         player->PlayerTalkClass->ClearMenus();
 
-        auto const it = std::find_if(sTemplateNpcMgr->indexContainer.begin(), sTemplateNpcMgr->indexContainer.end(),
-            [uiAction](auto const& indexTemplate) { return indexTemplate->gossipAction == uiAction; });
-
-        if (it != sTemplateNpcMgr->indexContainer.end())
+        for (auto const& indexTemplate : sTemplateNpcMgr->indexContainer)
         {
-            auto const& indexTemplate = *it;
-
-            sTemplateNpcMgr->sTalentsSpec = indexTemplate->playerSpec;
-            sTemplateNpcMgr->sGear = indexTemplate->gearOverride;
-            sTemplateNpcMgr->sGlyphs = indexTemplate->glyphOverride;
-            sTemplateNpcMgr->sTalents = indexTemplate->talentOverride;
-
-            sTemplateNpcMgr->ApplyTemplate(player, indexTemplate->gearMask);
-
-            CloseGossipMenuFor(player);
+            if (indexTemplate->gossipAction == uiAction)
+            {
+                sTemplateNpcMgr->sTalentsSpec = indexTemplate->playerSpec;
+                sTemplateNpcMgr->sGear = indexTemplate->gearOverride;
+                sTemplateNpcMgr->sGlyphs = indexTemplate->glyphOverride;
+                sTemplateNpcMgr->sTalents = indexTemplate->talentOverride;
+                sTemplateNpcMgr->ApplyTemplate(player, indexTemplate->gearMask);
+                CloseGossipMenuFor(player);
+                break;
+            }
         }
 
         // Extra gossip
