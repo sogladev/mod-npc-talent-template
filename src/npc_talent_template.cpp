@@ -274,32 +274,32 @@ std::string sTemplateNPC::GetClassString(Player* player)
     return EnumUtils::ToTitle(Classes(player->getClass()));
 }
 
-bool sTemplateNPC::OverwriteTemplate(Player* player, const std::string& playerSpecStr)
+bool sTemplateNPC::OverwriteTemplate(Player* player, const std::string& playerSpec)
 {
     // Delete old talent, glyph, and gear templates before extracting new ones
-    CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_talents` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-    CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_glyphs` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
-    CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_gear` WHERE `playerClass`='{}' AND `playerSpec`='{}' AND `playerRaceMask` & {}", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask());
-    CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_index` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpecStr.c_str());
+    CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_talents` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpec.c_str());
+    CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_glyphs` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpec.c_str());
+    CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_gear` WHERE `playerClass`='{}' AND `playerSpec`='{}' AND `playerRaceMask` & {}", GetClassString(player).c_str(), playerSpec.c_str(), player->getRaceMask());
+    CharacterDatabase.Execute("DELETE FROM `mod_npc_talent_template_index` WHERE `playerClass`='{}' AND `playerSpec`='{}'", GetClassString(player).c_str(), playerSpec.c_str());
     return false;
 }
 
-void sTemplateNPC::ExtractGearTemplateToDB(Player* player, const std::string& playerSpecStr)
+void sTemplateNPC::ExtractGearTemplateToDB(Player* player, const std::string& playerSpec)
 {
     for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
         if (Item* equippedItem = player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
-            CharacterDatabase.Execute("INSERT INTO `mod_npc_talent_template_gear` (`playerClass`, `playerSpec`, `playerRaceMask`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant`) VALUES ('{}', '{}', {}, {}, {}, {}, {}, {}, {}, {}, {});", GetClassString(player).c_str(), playerSpecStr.c_str(), player->getRaceMask(), equippedItem->GetSlot(), equippedItem->GetEntry(), equippedItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_2), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_3), equippedItem->GetEnchantmentId(BONUS_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT));
+            CharacterDatabase.Execute("INSERT INTO `mod_npc_talent_template_gear` (`playerClass`, `playerSpec`, `playerRaceMask`, `pos`, `itemEntry`, `enchant`, `socket1`, `socket2`, `socket3`, `bonusEnchant`, `prismaticEnchant`) VALUES ('{}', '{}', {}, {}, {}, {}, {}, {}, {}, {}, {});", GetClassString(player).c_str(), playerSpec.c_str(), player->getRaceMask(), equippedItem->GetSlot(), equippedItem->GetEntry(), equippedItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_2), equippedItem->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_3), equippedItem->GetEnchantmentId(BONUS_ENCHANTMENT_SLOT), equippedItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT));
 }
 
-void sTemplateNPC::InsertIndexEntryToDB(Player* player, const std::string& playerSpecStr)
+void sTemplateNPC::InsertIndexEntryToDB(Player* player, const std::string& playerSpec)
 {
     CharacterDatabase.Execute(
         "INSERT INTO `mod_npc_talent_template_index` (`playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `mask`, `minLevel`, `maxLevel`) VALUES ('{}', '{}', {}, '{}', {}, {}, {});",
-        GetClassString(player).c_str(), playerSpecStr.c_str(), DEFAULT_GOSSIP_ACTION_ENTRY, "|cff00ff00|TInterface\\\\icons\\\\Trade_Engineering:30:30|t|r Update this gossip text in the index!", 1, player->GetLevel(), player->GetLevel()
+        GetClassString(player).c_str(), playerSpec.c_str(), DEFAULT_GOSSIP_ACTION_ENTRY, "|cff00ff00|TInterface\\\\icons\\\\Trade_Engineering:30:30|t|r Update this gossip text in the index!", 1, player->GetLevel(), player->GetLevel()
     );
 }
 
-void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, const std::string& playerSpecStr)
+void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, const std::string& playerSpec)
 {
     QueryResult result = CharacterDatabase.Query("SELECT `spell` FROM `character_talent` WHERE `guid`={} AND `specMask`&{}", player->GetGUID().GetCounter(), player->GetActiveSpecMask());
 
@@ -318,11 +318,11 @@ void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, const std::string& 
         Field* fields = result->Fetch();
         uint32 spell = fields[0].Get<uint32>();
 
-        CharacterDatabase.Execute("INSERT INTO `mod_npc_talent_template_talents` (`playerClass`, `playerSpec`, `talentId`) VALUES ('{}', '{}', {})", GetClassString(player).c_str(), playerSpecStr.c_str(), spell);
+        CharacterDatabase.Execute("INSERT INTO `mod_npc_talent_template_talents` (`playerClass`, `playerSpec`, `talentId`) VALUES ('{}', '{}', {})", GetClassString(player).c_str(), playerSpec.c_str(), spell);
     } while (result->NextRow());
 }
 
-void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, const std::string& playerSpecStr)
+void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, const std::string& playerSpec)
 {
     QueryResult result = CharacterDatabase.Query("SELECT `glyph1`, `glyph2`, `glyph3`, `glyph4`, `glyph5`, `glyph6` FROM `character_glyphs` WHERE `guid`={} AND `talentGroup`={}", player->GetGUID().GetCounter(), player->GetActiveSpec());
 
@@ -370,7 +370,7 @@ void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, const std::string& 
             break;
         }
 
-        CharacterDatabase.Execute("INSERT INTO `mod_npc_talent_template_glyphs` (`playerClass`, `playerSpec`, `slot`, `glyph`) VALUES ('{}', '{}', {}, {});", GetClassString(player).c_str(), playerSpecStr.c_str(), slot, storedGlyph);
+        CharacterDatabase.Execute("INSERT INTO `mod_npc_talent_template_glyphs` (`playerClass`, `playerSpec`, `slot`, `glyph`) VALUES ('{}', '{}', {}, {});", GetClassString(player).c_str(), playerSpec.c_str(), slot, storedGlyph);
     }
 }
 

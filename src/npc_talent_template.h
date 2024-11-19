@@ -269,11 +269,11 @@ public:
     void RemoveAllGlyphs(Player* player);
     void ApplyBonus(Player* player, Item* item, EnchantmentSlot slot, uint32 bonusEntry);
 
-    bool OverwriteTemplate(Player* player, const std::string& playerSpecStr);
-    void ExtractGearTemplateToDB(Player* player, const std::string& playerSpecStr);
-    void ExtractTalentTemplateToDB(Player* player, const std::string& playerSpecStr);
-    void ExtractGlyphsTemplateToDB(Player* player, const std::string& playerSpecStr);
-    void InsertIndexEntryToDB(Player* player, const std::string& playerSpecStr);
+    bool OverwriteTemplate(Player* player, const std::string& playerSpec);
+    void ExtractGearTemplateToDB(Player* player, const std::string& playerSpec);
+    void ExtractTalentTemplateToDB(Player* player, const std::string& playerSpec);
+    void ExtractGlyphsTemplateToDB(Player* player, const std::string& playerSpec);
+    void InsertIndexEntryToDB(Player* player, const std::string& playerSpec);
     bool IsWearingAnyGear(Player* player);
     bool HasSpentTalentPoints(Player* player);
 
