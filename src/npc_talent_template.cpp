@@ -457,6 +457,7 @@ void sTemplateNPC::ApplyTemplate(Player* player, IndexTemplate* indexTemplate)
     if (!player->HasSpell(SPELL_COLD_WEATHER_FLYING))
         player->learnSpell(SPELL_COLD_WEATHER_FLYING);
 
+    // Learn mount
     if (player->GetTeamId() == TEAM_HORDE && !player->HasSpell(sTemplateNpcMgr->hordeMount))
         player->learnSpell(sTemplateNpcMgr->hordeMount);
     else if (player->GetTeamId() == TEAM_ALLIANCE && !player->HasSpell(sTemplateNpcMgr->allianceMount))
@@ -506,17 +507,13 @@ public:
 
         player->PlayerTalkClass->ClearMenus();
 
-        for (auto const& indexTemplate : sTemplateNpcMgr->indexContainer)
-            if (indexTemplate->gossipAction == uiAction)
-            {
-                sTemplateNpcMgr->sTalentsSpec = indexTemplate->playerSpec;
-                sTemplateNpcMgr->sGear = indexTemplate->gearOverride;
-                sTemplateNpcMgr->sGlyphs = indexTemplate->glyphOverride;
-                sTemplateNpcMgr->sTalents = indexTemplate->talentOverride;
-                sTemplateNpcMgr->ApplyTemplate(player, indexTemplate->gearMask);
-                CloseGossipMenuFor(player);
-                break;
-            }
+        for (IndexTemplate *const &indexTemplate : sTemplateNpcMgr->indexContainer)
+          if (indexTemplate->gossipAction == uiAction)
+          {
+            sTemplateNpcMgr->ApplyTemplate(player, indexTemplate);
+            CloseGossipMenuFor(player);
+            break;
+          }
 
         // Extra gossip
         switch (uiAction)
@@ -595,13 +592,13 @@ public:
 	static bool HandleCreateClassSpecItemSetCommand(ChatHandler *handler, std::string_view name)
     {
 		Player* player = handler->GetSession()->GetPlayer();
+        std::string specName = std::string(name);
         player->SaveToDB(false, false);
-		sTemplateNpcMgr->sTalentsSpec = name;
-		sTemplateNpcMgr->OverwriteTemplate(player, sTemplateNpcMgr->sTalentsSpec);
-		sTemplateNpcMgr->ExtractGearTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
-		sTemplateNpcMgr->ExtractTalentTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
-		sTemplateNpcMgr->ExtractGlyphsTemplateToDB(player, sTemplateNpcMgr->sTalentsSpec);
-		sTemplateNpcMgr->InsertIndexEntryToDB(player, sTemplateNpcMgr->sTalentsSpec);
+		sTemplateNpcMgr->OverwriteTemplate(player, specName);
+		sTemplateNpcMgr->ExtractGearTemplateToDB(player, specName);
+		sTemplateNpcMgr->ExtractTalentTemplateToDB(player, specName);
+		sTemplateNpcMgr->ExtractGlyphsTemplateToDB(player, specName);
+		sTemplateNpcMgr->InsertIndexEntryToDB(player, specName);
         player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT)->c_str());
         ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT_INFO);
 		return true;
