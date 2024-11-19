@@ -67,7 +67,7 @@ void sTemplateNPC::RemoveAllGlyphs(Player* player)
             }
 }
 
-void sTemplateNPC::LearnTemplateTalents(Player* player)
+void sTemplateNPC::LearnTemplateTalents(Player* player, const std::string& sTalents)
 {
     for (auto const& talentTemplate : talentContainer)
         if (talentTemplate->playerClass == GetClassString(player).c_str() && talentTemplate->playerSpec == sTalents)
@@ -78,7 +78,7 @@ void sTemplateNPC::LearnTemplateTalents(Player* player)
     player->InitTalentForLevel();
 }
 
-void sTemplateNPC::LearnTemplateGlyphs(Player* player)
+void sTemplateNPC::LearnTemplateGlyphs(Player* player, const std::string& sGlyphs)
 {
     for (auto const& glyphTemplate : glyphContainer)
     {
@@ -90,7 +90,7 @@ void sTemplateNPC::LearnTemplateGlyphs(Player* player)
     player->SendTalentsInfoData(false);
 }
 
-void sTemplateNPC::EquipTemplateGear(Player* player)
+void sTemplateNPC::EquipTemplateGear(Player* player, const std::string& sGear)
 {
     for (auto const& gearTemplate : gearContainer)
         if (gearTemplate->playerClass == GetClassString(player).c_str() &&
@@ -387,7 +387,7 @@ bool sTemplateNPC::IsWearingAnyGear(Player* player)
     return false;
 }
 
-void sTemplateNPC::SatisfyExtraGearRequirements(Player* player)
+void sTemplateNPC::SatisfyExtraGearRequirements(Player* player, const std::string& sGear)
 {
     switch (player->getClass())
     {
@@ -405,8 +405,9 @@ void sTemplateNPC::SatisfyExtraGearRequirements(Player* player)
     }
 }
 
-void sTemplateNPC::ApplyTemplate(Player* player, TemplateFlags flag)
+void sTemplateNPC::ApplyTemplate(Player* player, IndexTemplate* indexTemplate)
 {
+    TemplateFlags flag = indexTemplate->gearMask;
     bool canApply = true;
     if ((flag & TEMPLATE_APPLY_GEAR) && sTemplateNpcMgr->IsWearingAnyGear(player))
     {
@@ -430,15 +431,15 @@ void sTemplateNPC::ApplyTemplate(Player* player, TemplateFlags flag)
     {
         player->_RemoveAllItemMods();
         sTemplateNpcMgr->LearnPlateMailSpells(player);
-        sTemplateNpcMgr->SatisfyExtraGearRequirements(player);
-        sTemplateNpcMgr->EquipTemplateGear(player);
+        sTemplateNpcMgr->SatisfyExtraGearRequirements(player, indexTemplate->gearOverride);
+        sTemplateNpcMgr->EquipTemplateGear(player, indexTemplate->gearOverride);
     }
 
     if (flag & TEMPLATE_APPLY_GLYPHS)
-        sTemplateNpcMgr->LearnTemplateGlyphs(player);
+        sTemplateNpcMgr->LearnTemplateGlyphs(player, indexTemplate->glyphOverride);
 
     if (flag & TEMPLATE_APPLY_TALENTS)
-        sTemplateNpcMgr->LearnTemplateTalents(player);
+        sTemplateNpcMgr->LearnTemplateTalents(player, indexTemplate->talentOverride);
 
     if (flag & (TEMPLATE_APPLY_TALENTS | TEMPLATE_APPLY_GEAR))
         player->UpdateTitansGrip();
@@ -468,7 +469,7 @@ void sTemplateNPC::ApplyTemplate(Player* player, TemplateFlags flag)
     if (!player->HasSpell(SPELL_LEARN_A_SECOND_TALENT_SPECIALIZATION))
         player->CastSpell(player, SPELL_LEARN_A_SECOND_TALENT_SPECIALIZATION, player->GetGUID());
 
-    player->GetSession()->SendAreaTriggerMessage(player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EQUIPPED_TEMPLATE)->c_str(), sTemplateNpcMgr->GetClassString(player).c_str(), sTalentsSpec.c_str());
+    player->GetSession()->SendAreaTriggerMessage(player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EQUIPPED_TEMPLATE)->c_str(), sTemplateNpcMgr->GetClassString(player).c_str(), indexTemplate->playerSpec.c_str());
 }
 
 class npc_talent_template : public CreatureScript

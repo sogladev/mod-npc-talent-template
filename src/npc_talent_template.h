@@ -283,16 +283,12 @@ public:
     bool HasSpentTalentPoints(Player* player);
 
     std::string GetClassString(Player* player);
-    std::string sTalentsSpec;
-    std::string sGear;
-    std::string sGlyphs;
-    std::string sTalents;
 
-    void LearnTemplateTalents(Player* player);
-    void LearnTemplateGlyphs(Player* player);
-    void SatisfyExtraGearRequirements(Player* player);
-    void ApplyTemplate(Player* player, TemplateFlags flag);
-    void EquipTemplateGear(Player* player);
+    void EquipTemplateGear(Player* player, const std::string& sGear);
+    void SatisfyExtraGearRequirements(Player* player, const std::string& sGear);
+    void LearnTemplateTalents(Player* player, const std::string& sTalents);
+    void LearnTemplateGlyphs(Player* player, const std::string& sGlyphs);
+    void ApplyTemplate(Player* player, IndexTemplate* indexTemplate);
 
     void LearnPlateMailSpells(Player* player);
 
