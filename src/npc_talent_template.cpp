@@ -243,26 +243,26 @@ void sTemplateNPC::LoadIndexContainer()
     {
         Field* fields = result->Fetch();
 
-        IndexTemplate* pIndex = new IndexTemplate;
+        IndexTemplate* indexTemplate = new IndexTemplate;
 
-        pIndex->playerClass = fields[0].Get<std::string>();
-        pIndex->playerSpec = fields[1].Get<std::string>();
-        pIndex->gossipAction = fields[2].Get<uint32>();
-        pIndex->gossipText = fields[3].Get<std::string>();
-        pIndex->gearMask = static_cast<TemplateFlags>(fields[4].Get<uint32>());
-        pIndex->minLevel = fields[5].Get<uint32>();
-        pIndex->maxLevel = fields[6].Get<uint32>();
-        pIndex->gearOverride = fields[7].Get<std::string>();
-        if (pIndex->gearOverride.empty())
-            pIndex->gearOverride = pIndex->playerSpec;
-        pIndex->glyphOverride = fields[8].Get<std::string>();
-        if (pIndex->glyphOverride.empty())
-            pIndex->glyphOverride = pIndex->playerSpec;
-        pIndex->talentOverride = fields[9].Get<std::string>();
-        if (pIndex->talentOverride.empty())
-            pIndex->talentOverride = pIndex->playerSpec;
+        indexTemplate->playerClass = fields[0].Get<std::string>();
+        indexTemplate->playerSpec = fields[1].Get<std::string>();
+        indexTemplate->gossipAction = fields[2].Get<uint32>();
+        indexTemplate->gossipText = fields[3].Get<std::string>();
+        indexTemplate->gearMask = static_cast<TemplateFlags>(fields[4].Get<uint32>());
+        indexTemplate->minLevel = fields[5].Get<uint32>();
+        indexTemplate->maxLevel = fields[6].Get<uint32>();
+        indexTemplate->gearOverride = fields[7].Get<std::string>();
+        if (indexTemplate->gearOverride.empty())
+            indexTemplate->gearOverride = indexTemplate->playerSpec;
+        indexTemplate->glyphOverride = fields[8].Get<std::string>();
+        if (indexTemplate->glyphOverride.empty())
+            indexTemplate->glyphOverride = indexTemplate->playerSpec;
+        indexTemplate->talentOverride = fields[9].Get<std::string>();
+        if (indexTemplate->talentOverride.empty())
+            indexTemplate->talentOverride = indexTemplate->playerSpec;
 
-        indexContainer.push_back(pIndex);
+        indexContainer.push_back(indexTemplate);
         ++count;
     } while (result->NextRow());
 
