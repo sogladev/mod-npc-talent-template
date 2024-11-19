@@ -5,7 +5,7 @@
 #include "ScriptedGossip.h"
 #include "npc_talent_template.h"
 
-#define DEFAULT_GOSSIP_ACTION_ENTRY 9999 // default value for gossipAction when creating new template */
+#define DEFAULT_GOSSIP_ACTION_ENTRY 9999 // default value for gossipAction when creating new template
 
 void sTemplateNPC::LearnPlateMailSpells(Player *player)
 {
@@ -81,12 +81,8 @@ void sTemplateNPC::LearnTemplateTalents(Player* player, const std::string& sTale
 void sTemplateNPC::LearnTemplateGlyphs(Player* player, const std::string& sGlyphs)
 {
     for (auto const& glyphTemplate : glyphContainer)
-    {
         if (glyphTemplate->playerClass == GetClassString(player).c_str() && glyphTemplate->playerSpec == sGlyphs)
-        {
             ApplyGlyph(player, glyphTemplate->slot, glyphTemplate->glyph);
-        }
-    }
     player->SendTalentsInfoData(false);
 }
 
@@ -408,6 +404,7 @@ void sTemplateNPC::SatisfyExtraGearRequirements(Player* player, const std::strin
 void sTemplateNPC::ApplyTemplate(Player* player, IndexTemplate* indexTemplate)
 {
     TemplateFlags flag = indexTemplate->mask;
+
     bool canApply = true;
     if ((flag & TEMPLATE_APPLY_GEAR) && sTemplateNpcMgr->IsWearingAnyGear(player))
     {
@@ -483,19 +480,24 @@ public:
         for (auto const& indexTemplate : sTemplateNpcMgr->indexContainer)
             if (indexTemplate->playerClass == sTemplateNpcMgr->GetClassString(player).c_str() && (indexTemplate->minLevel <= player->GetLevel() && player->GetLevel() <= indexTemplate->maxLevel))
                 AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, indexTemplate->gossipText, GOSSIP_SENDER_MAIN, indexTemplate->gossipAction);
+
         // Extra gossip
         if (sTemplateNpcMgr->enableResetTalents || sTemplateNpcMgr->enableRemoveAllGlyphs || sTemplateNpcMgr->enableDestroyEquippedGear)
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "----------------------------------------------", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_SPACER);
+
         if (sTemplateNpcMgr->enableResetTalents)
         {
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\Trade_Engineering:30:30|t|r Reset Talents", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_RESET_TALENTS);
             if (player->getClass() == CLASS_HUNTER)
                 AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_hunter_beasttaming:30:30|t|r Reset Pet Talents", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_RESET_PET_TALENTS);
         }
+
         if (sTemplateNpcMgr->enableRemoveAllGlyphs)
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\Spell_ChargeNegative:30|t|r Remove all glyphs", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_RESET_REMOVE_GLYPHS);
+
         if (sTemplateNpcMgr->enableDestroyEquippedGear)
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\ability_vehicle_launchplayer:30|t|r Destroy my equipped gear", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_RESET_REMOVE_EQUIPPED_GEAR);
+
         SendGossipMenuFor(player, creature->GetEntry(), creature->GetGUID());
         return true;
     }
