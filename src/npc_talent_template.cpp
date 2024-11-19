@@ -593,18 +593,18 @@ public:
 
     static bool HandleCreateClassSpecItemSetCommand(ChatHandler *handler, std::string_view name)
     {
-		Player* player = handler->GetSession()->GetPlayer();
+        Player* player = handler->GetSession()->GetPlayer();
         std::string specName = std::string(name);
         player->SaveToDB(false, false);
-		sTemplateNpcMgr->OverwriteTemplate(player, specName);
-		sTemplateNpcMgr->ExtractGearTemplateToDB(player, specName);
-		sTemplateNpcMgr->ExtractTalentTemplateToDB(player, specName);
-		sTemplateNpcMgr->ExtractGlyphsTemplateToDB(player, specName);
-		sTemplateNpcMgr->InsertIndexEntryToDB(player, specName);
+        sTemplateNpcMgr->OverwriteTemplate(player, specName);
+        sTemplateNpcMgr->ExtractGearTemplateToDB(player, specName);
+        sTemplateNpcMgr->ExtractTalentTemplateToDB(player, specName);
+        sTemplateNpcMgr->ExtractGlyphsTemplateToDB(player, specName);
+        sTemplateNpcMgr->InsertIndexEntryToDB(player, specName);
         player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT)->c_str());
         ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT_INFO);
-		return true;
-	}
+        return true;
+    }
 
     static bool HandleReloadTemplateNPCCommand(ChatHandler *handler)
     {
