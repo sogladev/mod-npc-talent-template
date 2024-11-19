@@ -228,7 +228,7 @@ void sTemplateNPC::LoadIndexContainer()
         delete index;
     indexContainer.clear();
 
-    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel`, `gearOverride`, `glyphOverride`, `talentOverride` FROM `mod_npc_talent_template_index` ORDER BY `gossipAction`;");
+    QueryResult result = CharacterDatabase.Query("SELECT `playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `mask`, `minLevel`, `maxLevel`, `gearOverride`, `glyphOverride`, `talentOverride` FROM `mod_npc_talent_template_index` ORDER BY `gossipAction`;");
 
     uint32 oldMSTime = getMSTime();
     uint32 count = 0;
@@ -249,7 +249,7 @@ void sTemplateNPC::LoadIndexContainer()
         indexTemplate->playerSpec = fields[1].Get<std::string>();
         indexTemplate->gossipAction = fields[2].Get<uint32>();
         indexTemplate->gossipText = fields[3].Get<std::string>();
-        indexTemplate->gearMask = static_cast<TemplateFlags>(fields[4].Get<uint32>());
+        indexTemplate->mask = static_cast<TemplateFlags>(fields[4].Get<uint32>());
         indexTemplate->minLevel = fields[5].Get<uint32>();
         indexTemplate->maxLevel = fields[6].Get<uint32>();
         indexTemplate->gearOverride = fields[7].Get<std::string>();
@@ -294,7 +294,7 @@ void sTemplateNPC::ExtractGearTemplateToDB(Player* player, const std::string& pl
 void sTemplateNPC::InsertIndexEntryToDB(Player* player, const std::string& playerSpecStr)
 {
     CharacterDatabase.Execute(
-        "INSERT INTO `mod_npc_talent_template_index` (`playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel`) VALUES ('{}', '{}', {}, '{}', {}, {}, {});",
+        "INSERT INTO `mod_npc_talent_template_index` (`playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `mask`, `minLevel`, `maxLevel`) VALUES ('{}', '{}', {}, '{}', {}, {}, {});",
         GetClassString(player).c_str(), playerSpecStr.c_str(), DEFAULT_GOSSIP_ACTION_ENTRY, "|cff00ff00|TInterface\\\\icons\\\\Trade_Engineering:30:30|t|r Update this gossip text in the index!", 1, player->GetLevel(), player->GetLevel()
     );
 }
@@ -407,7 +407,7 @@ void sTemplateNPC::SatisfyExtraGearRequirements(Player* player, const std::strin
 
 void sTemplateNPC::ApplyTemplate(Player* player, IndexTemplate* indexTemplate)
 {
-    TemplateFlags flag = indexTemplate->gearMask;
+    TemplateFlags flag = indexTemplate->mask;
     bool canApply = true;
     if ((flag & TEMPLATE_APPLY_GEAR) && sTemplateNpcMgr->IsWearingAnyGear(player))
     {

@@ -239,7 +239,7 @@ struct IndexTemplate
     std::string playerSpec;
     uint32 gossipAction;
     std::string gossipText;
-    TemplateFlags gearMask;
+    TemplateFlags mask;
     uint32 minLevel;
     uint32 maxLevel;
     std::string gearOverride; // use playerSpec if not set

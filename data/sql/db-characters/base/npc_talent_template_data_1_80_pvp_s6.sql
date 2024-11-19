@@ -10,7 +10,7 @@ SET @RACEMASK_H = 690; -- Horde
 SET @RACEMASK_ALL = 1791; -- RACEMASK_ALL_PLAYABLE
 
 /*!40000 ALTER TABLE `mod_npc_talent_template_index` DISABLE KEYS */;
-INSERT INTO `mod_npc_talent_template_index` (`playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `gearMask`, `minLevel`, `maxLevel`, `glyphOverride`, `talentOverride`) VALUES
+INSERT INTO `mod_npc_talent_template_index` (`playerClass`, `playerSpec`, `gossipAction`, `gossipText`, `mask`, `minLevel`, `maxLevel`, `glyphOverride`, `talentOverride`) VALUES
 ('Mage', 'Arcane80PvPS6', @ACTION+000, '|cff00ff00|TInterface\\icons\\spell_holy_magicalsentry:30|t|r Use Arcane S6 PvP Spec', 7, @MINLEVEL, @MAXLEVEL, 'Arcane80PvP', 'Arcane80PvP'),
 ('Mage', 'Fire80PvPS6', @ACTION+001, '|cff00ff00|TInterface\\icons\\spell_fire_flamebolt:30|t|r Use Fire S6 PvP Spec', 7, @MINLEVEL, @MAXLEVEL, 'Fire80PvP', 'Fire80PvP'),
 ('Mage', 'Frost80PvPS6', @ACTION+002, '|cff00ff00|TInterface\\icons\\spell_frost_frostbolt02:30|t|r Use Frost S6 PvP Spec', 7, @MINLEVEL, @MAXLEVEL, 'Frost80PvP', 'Frost80PvP'),

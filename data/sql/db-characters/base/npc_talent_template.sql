@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `mod_npc_talent_template_index` (
   `playerSpec` varchar(50) NOT NULL,
   `gossipAction` int unsigned NOT NULL DEFAULT '0',
   `gossipText` varchar(200) NOT NULL,
-  `gearMask` int unsigned NOT NULL DEFAULT '0',
+  `mask` int unsigned NOT NULL DEFAULT '0',
   `minLevel` int unsigned NOT NULL DEFAULT '0',
   `maxLevel` int unsigned NOT NULL DEFAULT '0',
   `gearOverride` varchar(50) NOT NULL DEFAULT '',
