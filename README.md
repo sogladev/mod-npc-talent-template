@@ -33,8 +33,7 @@ c. `mod_npc_talent_template_glyphs`: no modifying needed
 d. `mod_npc_talent_template_index`: modify gossipText, actionId needs to be unique per spec. Gossip options are displayed according to their ID with the lowest ID at the top. You can override a column to re-use talents or glyphs or gear from another template. For example, talents and glyphs from `Restoration80PvP` can be re-used
 
 `.templatenpc reload` to reload changes. Test with dropping `acore_characters.mod_npc_talent_template*` tables and updates from character db as needed
-
-```
+```sql
 DELETE FROM acore_characters.updates WHERE name='npc_talent_template_data_1_80_pvp_s6.sql';
 DELETE FROM acore_characters.updates WHERE name='npc_talent_template_data_2_70_pve_t6.sql';
 DELETE FROM acore_characters.updates WHERE name='npc_talent_template.sql';
