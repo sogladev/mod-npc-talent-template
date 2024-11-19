@@ -58,12 +58,12 @@ void sTemplateNPC::RemoveAllGlyphs(Player* player)
         if (uint32 glyph = player->GetGlyph(i))
             if (GlyphPropertiesEntry const* gp = sGlyphPropertiesStore.LookupEntry(glyph))
             {
-                // if (GlyphSlotEntry const* gs = sGlyphSlotStore.LookupEntry(player->GetGlyphSlot(i)))
-                // {
+                if (GlyphSlotEntry const* gs = sGlyphSlotStore.LookupEntry(player->GetGlyphSlot(i)))
+                {
                     player->RemoveAurasDueToSpell(gp->SpellId);
                     player->SetGlyph(i, 0, true);
                     player->SendTalentsInfoData(false); // this is somewhat an in-game glyph realtime update (apply/remove)
-                // }
+                }
             }
 }
 
