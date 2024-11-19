@@ -589,7 +589,7 @@ public:
         return commandTable;
     }
 
-	static bool HandleCreateClassSpecItemSetCommand(ChatHandler *handler, std::string_view name)
+    static bool HandleCreateClassSpecItemSetCommand(ChatHandler *handler, std::string_view name)
     {
 		Player* player = handler->GetSession()->GetPlayer();
         std::string specName = std::string(name);
