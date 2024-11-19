@@ -584,6 +584,7 @@ public:
                 break;
 
             default:
+                CloseGossipMenuFor(player);
                 break;
         }
 
