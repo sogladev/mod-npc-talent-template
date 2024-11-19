@@ -2,7 +2,7 @@
 SET @ENTRY := 55009;
 SET @NAME := 'Pick a spec';
 SET @SUBNAME := 'AzerothCore Template';
-SET @TEXT := 'Here you can select a character template which will Gear, Gem, Spec, and finish glyphs for your toon instantly.';
+SET @TEXT := 'Here you can select a character template which will gear up, gem up, set talent specialization, and set glyphs for your character instantly.';
 SET @DISPLAY_ID := 24877;
 
 DELETE FROM `creature_template` WHERE `entry` = @ENTRY;
