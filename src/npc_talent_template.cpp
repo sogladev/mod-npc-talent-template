@@ -57,7 +57,7 @@ void sTemplateNPC::RemoveAllGlyphs(Player* player)
     for (uint8 i = 0; i < MAX_GLYPH_SLOT_INDEX; ++i)
         if (uint32 glyph = player->GetGlyph(i))
             if (GlyphPropertiesEntry const* gp = sGlyphPropertiesStore.LookupEntry(glyph))
-                if (GlyphSlotEntry const* gs = sGlyphSlotStore.LookupEntry(player->GetGlyphSlot(i)))
+                if (sGlyphSlotStore.LookupEntry(player->GetGlyphSlot(i)))
                 {
                     player->RemoveAurasDueToSpell(gp->SpellId);
                     player->SetGlyph(i, 0, true);
