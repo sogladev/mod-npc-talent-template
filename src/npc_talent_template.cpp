@@ -302,7 +302,7 @@ void sTemplateNPC::ExtractTalentTemplateToDB(Player* player, const std::string& 
 
     if (player->GetFreeTalentPoints() > 0)
     {
-        player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_EXTRACT_MUST_SPEND_ALL_TALENT_POINTS)->c_str());
+        player->GetSession()->SendAreaTriggerMessage(player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_EXTRACT_MUST_SPEND_ALL_TALENT_POINTS)->c_str());
         ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_EXTRACT_MUST_SPEND_ALL_TALENT_POINTS);
         return;
     }
@@ -322,7 +322,7 @@ void sTemplateNPC::ExtractGlyphsTemplateToDB(Player* player, const std::string& 
 
     if (!result)
     {
-        player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_EXTRACT_GET_GLYPHS)->c_str());
+        player->GetSession()->SendAreaTriggerMessage(player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_EXTRACT_GET_GLYPHS)->c_str());
         ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_EXTRACT_GET_GLYPHS);
         return;
     }
@@ -406,13 +406,13 @@ void sTemplateNPC::ApplyTemplate(Player* player, IndexTemplate* indexTemplate)
     bool canApply = true;
     if ((flag & TEMPLATE_APPLY_GEAR) && sTemplateNpcMgr->IsWearingAnyGear(player))
     {
-        player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_MUST_REMOVE_EQUIPPED)->c_str());
+        player->GetSession()->SendAreaTriggerMessage(player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_MUST_REMOVE_EQUIPPED)->c_str());
         ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_MUST_REMOVE_EQUIPPED);
         canApply = false;
     }
     if ((flag & TEMPLATE_APPLY_TALENTS) && sTemplateNpcMgr->HasSpentTalentPoints(player))
     {
-        player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_MUST_RESET_TALENTS)->c_str());
+        player->GetSession()->SendAreaTriggerMessage(player->GetSession()->GetModuleString(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_MUST_RESET_TALENTS)->c_str());
         ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, ERROR_NPC_TALENT_TEMPLATE_MUST_RESET_TALENTS);
         canApply = false;
     }
@@ -465,7 +465,7 @@ void sTemplateNPC::ApplyTemplate(Player* player, IndexTemplate* indexTemplate)
     if (!player->HasSpell(SPELL_LEARN_A_SECOND_TALENT_SPECIALIZATION))
         player->CastSpell(player, SPELL_LEARN_A_SECOND_TALENT_SPECIALIZATION, player->GetGUID());
 
-    player->GetSession()->SendAreaTriggerMessage(player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EQUIPPED_TEMPLATE)->c_str(), sTemplateNpcMgr->GetClassString(player).c_str(), indexTemplate->playerSpec.c_str());
+    player->GetSession()->SendAreaTriggerMessage(player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EQUIPPED_TEMPLATE)->c_str(), sTemplateNpcMgr->GetClassString(player), indexTemplate->playerSpec);
 }
 
 class npc_talent_template : public CreatureScript
@@ -525,7 +525,7 @@ public:
 
             case GOSSIP_ACTION_RESET_REMOVE_GLYPHS:
                 sTemplateNpcMgr->RemoveAllGlyphs(player);
-                player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_REMOVED_GLYPHS)->c_str());
+                player->GetSession()->SendAreaTriggerMessage(player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_REMOVED_GLYPHS)->c_str());
                 CloseGossipMenuFor(player);
                 break;
 
@@ -552,7 +552,7 @@ public:
                     player->DestroyItem(INVENTORY_SLOT_BAG_0, i, true);
                 }
                 player->SaveToDB(false, false);
-                player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_DESTROYED_EQUIPPED_GEAR)->c_str());
+                player->GetSession()->SendAreaTriggerMessage(player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_DESTROYED_EQUIPPED_GEAR)->c_str());
                 CloseGossipMenuFor(player);
                 break;
 
@@ -599,7 +599,7 @@ public:
         sTemplateNpcMgr->ExtractTalentTemplateToDB(player, specName);
         sTemplateNpcMgr->ExtractGlyphsTemplateToDB(player, specName);
         sTemplateNpcMgr->InsertIndexEntryToDB(player, specName);
-        player->GetSession()->SendAreaTriggerMessage("%s", player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT)->c_str());
+        player->GetSession()->SendAreaTriggerMessage(player->GetSession()->GetModuleString(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT)->c_str());
         ChatHandler(player->GetSession()).PSendModuleSysMessage(MODULE_STRING, SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT_INFO);
         return true;
     }
