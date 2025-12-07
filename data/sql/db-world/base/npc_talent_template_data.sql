@@ -36,7 +36,17 @@ INSERT INTO `module_string` (`module`, `id`, `string`) VALUES
 (@MODULE_STRING, 9, 'Template successfully created!'),
 (@MODULE_STRING, 10, 'Template skeleton successfully created! You can `.templatenpc reload` to test your template. WARNING: Templates need to be manually exported to `.sql`. See documentation for more info.'),
 (@MODULE_STRING, 11, 'Reloading templates for Template NPC table...'),
-(@MODULE_STRING, 12, 'Template NPC templates reloaded.');
+(@MODULE_STRING, 12, 'Template NPC templates reloaded.'),
+(@MODULE_STRING, 13, 'Usage: .templatenpc kit create <gear|talent|glyph> [kitId] <name>'),
+(@MODULE_STRING, 14, 'Invalid kitId'),
+(@MODULE_STRING, 15, 'Failed to create kit entry'),
+(@MODULE_STRING, 16, 'Kit deleted successfully.'),
+(@MODULE_STRING, 17, 'Invalid kit type; expected gear, talent, or glyph'),
+(@MODULE_STRING, 18, 'No kits found.'),
+(@MODULE_STRING, 19, 'Kits:'),
+(@MODULE_STRING, 20, 'Usage: .templatenpc kit delete <kitId>');
+(@MODULE_STRING, 21, 'Kit {} (type: {}) "{}" created.');
+(@MODULE_STRING, 22, '{} | {} | {} | {}');
 
 -- 'deDE', 'ruRU', 'ruRU', 'koKR', 'frFR', 'zhCN', 'zhTW', 'esES', 'esMX',
 DELETE FROM `module_string_locale` WHERE `module` = @MODULE_STRING;

@@ -22,7 +22,9 @@ https://streamable.com/yxv1m
 This process can only be done by an administrator and is error-prone. Creating gear sets should be done on a local development server and exporting sets from the DB to a `.sql` is recommended.
 
 1. Setup a character with the desired gear set, gems, enchants, talents and glyphs.
-2. `.templatenpc create [TemplateName]` creates database entries for gear, talents, glyphs and an entry in the index table for your class. A template name needs to be unique for that class and is case-sensitive. For example, when creating a PvP set for a lvl80 Restoration Druid `.templatenpc create Restoration80PvPS8`.
+2. `.templatenpc kit create <gear|talent|glyph> [kitId] <name>` creates a kit entry for the supplied kit type. The `name` is required and may contain spaces (wrap in quotes if your shell splits arguments). If `kitId` is omitted, an ID is auto-generated and printed back. Example: `.templatenpc kit create gear "Warrior Fury 80 PvP S6"` or `.templatenpc kit create gear 100024 "Warrior Fury 80 PvP S6"`.
+3. `.templatenpc kit delete <kitId>` removes a kit from the DB for the given kit id.
+4. `.templatenpc kit list [<gear|talent|glyph>] [<Class>]` lists all stored kits with their IDs and details; optional filters are kit type and class (e.g., `Gear` or `Warrior`).
 3. export to `.sql`
 4. some manual changes are needed
 
@@ -37,8 +39,10 @@ d. `mod_npc_talent_template_index`: modify gossipText, actionId needs to be uniq
 DELETE FROM acore_characters.updates WHERE name='npc_talent_template_data_1_80_pvp_s6.sql';
 DELETE FROM acore_characters.updates WHERE name='npc_talent_template_data_2_70_pve_t6.sql';
 DELETE FROM acore_characters.updates WHERE name='npc_talent_template.sql';
+DROP TABLE IF EXISTS acore_characters.mod_npc_talent_template_index;
 DROP TABLE IF EXISTS acore_characters.mod_npc_talent_template_gear;
 DROP TABLE IF EXISTS acore_characters.mod_npc_talent_template_glyphs;
-DROP TABLE IF EXISTS acore_characters.mod_npc_talent_template_index;
 DROP TABLE IF EXISTS acore_characters.mod_npc_talent_template_talents;
+DROP TABLE IF EXISTS acore_characters.mod_npc_talent_template_templates;
+DROP TABLE IF EXISTS acore_characters.mod_npc_talent_template_kits;
 ```

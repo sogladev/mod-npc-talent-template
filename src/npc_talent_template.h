@@ -3,31 +3,45 @@
 
 #include "Player.h"
 #include "ScriptMgr.h"
+#include <unordered_map>
 
 #define MODULE_STRING "npc-talent-template"
 
-enum TemplateNpcMisc
+namespace NPCTalentTemplate {
+
+enum Misc
 {
     TEMPLATE_NPC_FACTION_ASHTONGUE_DEATHSWORN = 1012,
     TEMPLATE_NPC_REP_AMOUNT_EXALTED = 42000,
 };
 
-enum TemplateNpcStrings
+enum Strings
 {
-    ERROR_NPC_TALENT_TEMPLATE_MUST_REMOVE_EQUIPPED = 1,
-    ERROR_NPC_TALENT_TEMPLATE_MUST_RESET_TALENTS = 2,
-    SUCCESS_NPC_TALENT_TEMPLATE_EQUIPPED_TEMPLATE = 3,
-    SUCCESS_NPC_TALENT_TEMPLATE_DESTROYED_EQUIPPED_GEAR = 4,
-    SUCCESS_NPC_TALENT_TEMPLATE_REMOVED_GLYPHS = 5,
-    SUCCESS_NPC_TALENT_TEMPLATE_COPIED = 6,
+    ERROR_MUST_REMOVE_EQUIPPED = 1,
+    ERROR_MUST_RESET_TALENTS = 2,
+    SUCCESS_EQUIPPED_TEMPLATE = 3,
+    SUCCESS_DESTROYED_EQUIPPED_GEAR = 4,
+    SUCCESS_REMOVED_GLYPHS = 5,
+    SUCCESS_COPIED = 6,
     // Extract
-    ERROR_NPC_TALENT_TEMPLATE_EXTRACT_MUST_SPEND_ALL_TALENT_POINTS = 7,
-    ERROR_NPC_TALENT_TEMPLATE_EXTRACT_GET_GLYPHS = 8,
-    SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT = 9,
-    SUCCESS_NPC_TALENT_TEMPLATE_EXTRACT_INFO = 10,
+    ERROR_EXTRACT_MUST_SPEND_ALL_TALENT_POINTS = 7,
+    ERROR_EXTRACT_GET_GLYPHS = 8,
+    SUCCESS_EXTRACT = 9,
+    SUCCESS_EXTRACT_INFO = 10,
     // Reload
-    FEEDBACK_NPC_TALENT_TEMPLATE_RELOADING = 11,
-    SUCCESS_NPC_TALENT_TEMPLATE_RELOADED = 12,
+    FEEDBACK_RELOADING = 11,
+    SUCCESS_RELOADED = 12,
+    // Kit commands
+    USAGE_KIT_CREATE = 13,
+    ERROR_INVALID_KITID = 14,
+    ERROR_FAILED_CREATE_KIT = 15,
+    SUCCESS_KIT_DELETED = 16,
+    ERROR_INVALID_KIT_TYPE = 17,
+    FEEDBACK_NO_KITS = 18,
+    FEEDBACK_KITS_HEADER = 19,
+    USAGE_KIT_DELETE = 20,
+    SUCCESS_KIT_CREATED = 21,
+    FEEDBACK_KIT_ROW = 22,
 };
 
 enum TemplateNpcSpells
@@ -64,146 +78,22 @@ enum WeaponProficiencies
     THROW_WAR = 2567
 };
 
-static void LearnWeaponSkills(Player* player)
+struct TalentEntry
 {
-    WeaponProficiencies wepSkills[] = {
-        BLOCK, BOWS, CROSSBOWS, DAGGERS, FIST_WEAPONS, GUNS, ONE_H_AXES, ONE_H_MACES,
-        ONE_H_SWORDS, POLEARMS, SHOOT, STAVES, TWO_H_AXES, TWO_H_MACES, TWO_H_SWORDS, WANDS, THROW_WAR
-    };
-
-    uint32 size = 17;
-
-    for (uint32 i = 0; i < size; ++i)
-        if (player->HasSpell(wepSkills[i]))
-            continue;
-
-    switch (player->getClass())
-    {
-        case CLASS_WARRIOR:
-            player->learnSpell(THROW_WAR);
-            player->learnSpell(TWO_H_SWORDS);
-            player->learnSpell(TWO_H_MACES);
-            player->learnSpell(TWO_H_AXES);
-            player->learnSpell(STAVES);
-            player->learnSpell(POLEARMS);
-            player->learnSpell(ONE_H_SWORDS);
-            player->learnSpell(ONE_H_MACES);
-            player->learnSpell(ONE_H_AXES);
-            player->learnSpell(GUNS);
-            player->learnSpell(FIST_WEAPONS);
-            player->learnSpell(DAGGERS);
-            player->learnSpell(CROSSBOWS);
-            player->learnSpell(BOWS);
-            player->learnSpell(BLOCK);
-            break;
-        case CLASS_PRIEST:
-            player->learnSpell(WANDS);
-            player->learnSpell(STAVES);
-            player->learnSpell(SHOOT);
-            player->learnSpell(ONE_H_MACES);
-            player->learnSpell(DAGGERS);
-            break;
-        case CLASS_PALADIN:
-            player->learnSpell(TWO_H_SWORDS);
-            player->learnSpell(TWO_H_MACES);
-            player->learnSpell(TWO_H_AXES);
-            player->learnSpell(POLEARMS);
-            player->learnSpell(ONE_H_SWORDS);
-            player->learnSpell(ONE_H_MACES);
-            player->learnSpell(ONE_H_AXES);
-            player->learnSpell(BLOCK);
-            break;
-        case CLASS_ROGUE:
-            player->learnSpell(ONE_H_SWORDS);
-            player->learnSpell(ONE_H_MACES);
-            player->learnSpell(ONE_H_AXES);
-            player->learnSpell(GUNS);
-            player->learnSpell(FIST_WEAPONS);
-            player->learnSpell(DAGGERS);
-            player->learnSpell(CROSSBOWS);
-            player->learnSpell(BOWS);
-            break;
-        case CLASS_DEATH_KNIGHT:
-            player->learnSpell(TWO_H_SWORDS);
-            player->learnSpell(TWO_H_MACES);
-            player->learnSpell(TWO_H_AXES);
-            player->learnSpell(POLEARMS);
-            player->learnSpell(ONE_H_SWORDS);
-            player->learnSpell(ONE_H_MACES);
-            player->learnSpell(ONE_H_AXES);
-            break;
-        case CLASS_MAGE:
-            player->learnSpell(WANDS);
-            player->learnSpell(STAVES);
-            player->learnSpell(SHOOT);
-            player->learnSpell(ONE_H_SWORDS);
-            player->learnSpell(DAGGERS);
-            break;
-        case CLASS_SHAMAN:
-            player->learnSpell(TWO_H_MACES);
-            player->learnSpell(TWO_H_AXES);
-            player->learnSpell(STAVES);
-            player->learnSpell(ONE_H_MACES);
-            player->learnSpell(ONE_H_AXES);
-            player->learnSpell(FIST_WEAPONS);
-            player->learnSpell(DAGGERS);
-            player->learnSpell(BLOCK);
-            break;
-        case CLASS_HUNTER:
-            player->learnSpell(THROW_WAR);
-            player->learnSpell(TWO_H_SWORDS);
-            player->learnSpell(TWO_H_AXES);
-            player->learnSpell(STAVES);
-            player->learnSpell(POLEARMS);
-            player->learnSpell(ONE_H_SWORDS);
-            player->learnSpell(ONE_H_AXES);
-            player->learnSpell(GUNS);
-            player->learnSpell(FIST_WEAPONS);
-            player->learnSpell(DAGGERS);
-            player->learnSpell(CROSSBOWS);
-            player->learnSpell(BOWS);
-            break;
-        case CLASS_DRUID:
-            player->learnSpell(TWO_H_MACES);
-            player->learnSpell(STAVES);
-            player->learnSpell(POLEARMS);
-            player->learnSpell(ONE_H_MACES);
-            player->learnSpell(FIST_WEAPONS);
-            player->learnSpell(DAGGERS);
-            break;
-        case CLASS_WARLOCK:
-            player->learnSpell(WANDS);
-            player->learnSpell(STAVES);
-            player->learnSpell(SHOOT);
-            player->learnSpell(ONE_H_SWORDS);
-            player->learnSpell(DAGGERS);
-            break;
-        default:
-            break;
-        }
-    player->UpdateSkillsToMaxSkillsForLevel();
-
-}
-
-struct TalentTemplate
-{
-    std::string playerClass;
-    std::string playerSpec;
+    uint32 kitId;
     uint32 talentId;
 };
 
-struct GlyphTemplate
+struct GlyphEntry
 {
-    std::string playerClass;
-    std::string playerSpec;
+    uint32 kitId;
     uint8 slot;
     uint32 glyph;
 };
 
-struct GearTemplate
+struct GearEntry
 {
-    std::string playerClass;
-    std::string playerSpec;
+    uint32 kitId;
     uint32 playerRaceMask;
     uint8 pos;
     uint32 itemEntry;
@@ -215,14 +105,17 @@ struct GearTemplate
     uint32 prismaticEnchant;
 };
 
-enum GossipActions
+struct Kit
 {
-    GOSSIP_ACTION_SPACER = 5000, // ---------
-    GOSSIP_ACTION_RESET_TALENTS = 5001,
-    GOSSIP_ACTION_RESET_PET_TALENTS = 5002,
-    GOSSIP_ACTION_RESET_REMOVE_GLYPHS = 5003,
-    GOSSIP_ACTION_RESET_REMOVE_EQUIPPED_GEAR = 5004,
+    uint32 id;
+    std::string kitType; // 'gear','talent','glyph'
+    std::string name;
+    std::string playerClass;
+    std::string playerSpec;
 };
+
+
+// (Gossip actions defined later)
 
 enum TemplateFlags
 {
@@ -233,71 +126,111 @@ enum TemplateFlags
     TEMPLATE_APPLY_ALL = TEMPLATE_APPLY_GEAR | TEMPLATE_APPLY_TALENTS | TEMPLATE_APPLY_GLYPHS,
 };
 
-struct IndexTemplate
+enum TemplateCategory
 {
-    std::string playerClass;
-    std::string playerSpec;
-    uint32 gossipAction;
-    std::string gossipText;
-    TemplateFlags mask;
-    uint32 minLevel;
-    uint32 maxLevel;
-    std::string gearOverride; // use playerSpec if not set
-    std::string glyphOverride; // use playerSpec if not set
-    std::string talentOverride; // use playerSpec if not set
+    TEMPLATE_CATEGORY_PVE = 0,
+    TEMPLATE_CATEGORY_PVP,
+    TEMPLATE_CATEGORY_VIP,
+    TEMPLATE_CATEGORY_UTILITY
 };
 
-typedef std::vector<TalentTemplate*> TalentContainer;
-typedef std::vector<GlyphTemplate*> GlyphContainer;
-typedef std::vector<GearTemplate*> GearContainer;
-typedef std::vector<IndexTemplate*> IndexContainer;
+enum GossipActions {
+    GOSSIP_ACTION_CATEGORY_PVE = 1'000,
+    GOSSIP_ACTION_CATEGORY_PVP = 1'001,
+    GOSSIP_ACTION_CATEGORY_VIP = 1'002,
+    GOSSIP_ACTION_SPACER = 1'003, // ---------
+    GOSSIP_ACTION_RESET_TALENTS = 1'004,
+    GOSSIP_ACTION_RESET_PET_TALENTS = 1'005,
+    GOSSIP_ACTION_RESET_REMOVE_GLYPHS = 1'006,
+    GOSSIP_ACTION_RESET_REMOVE_EQUIPPED_GEAR = 1'007,
+    // Ranges to encode templateId in actionId = base + templateId
+    GOSSIP_ACTION_SELECT_TEMPLATE_BASE = 10'000,
+    GOSSIP_ACTION_APPLY_ALL_BASE = 20'000,
+    GOSSIP_ACTION_APPLY_GEAR_BASE = 30'000,
+    GOSSIP_ACTION_APPLY_TALENTS_BASE = 40'000,
+    GOSSIP_ACTION_APPLY_GLYPHS_BASE = 50'000,
+};
+
+typedef std::unordered_map<uint32, std::vector<GearEntry*>> GearKitContainer;
+typedef std::unordered_map<uint32, std::vector<TalentEntry*>> TalentKitContainer;
+typedef std::unordered_map<uint32, std::vector<GlyphEntry*>> GlyphKitContainer;
+
+struct TemplateEntry
+{
+    uint32 id;
+    std::string playerClass;
+    uint32 mask;
+    std::string category;
+    uint32 minLevel;
+    uint32 maxLevel;
+    uint32 gearKitId;
+    uint32 talentKitId;
+    uint32 glyphKitId;
+    std::string lockRequirement;
+    std::string templateName;
+    std::string icon;
+    bool enabled;
+    uint32 menuOrder;
+};
+
+typedef std::vector<TemplateEntry*> TemplateContainer;
 
 class sTemplateNPC
 {
 public:
     static sTemplateNPC* instance()
     {
-        static sTemplateNPC* instance = new sTemplateNPC();
+        static auto* instance = new sTemplateNPC();
         return instance;
     }
-    void LoadTalentsContainer();
-    void LoadGlyphsContainer();
-    void LoadGearContainer();
-    void LoadIndexContainer();
+    void LoadKits();
+    void LoadTemplates();
 
-    void ApplyGlyph(Player* player, uint8 slot, uint32 glyphID);
-    void RemoveAllGlyphs(Player* player);
-    void ApplyBonus(Player* player, Item* item, EnchantmentSlot slot, uint32 bonusEntry);
+    void EquipTemplateGearByKit(Player* player, uint32 kitId);
+    void LearnTemplateTalentsByKit(Player* player, uint32 kitId);
+    void LearnTemplateGlyphsByKit(Player* player, uint32 kitId);
 
-    bool OverwriteTemplate(Player* player, const std::string& playerSpec);
-    void ExtractGearTemplateToDB(Player* player, const std::string& playerSpec);
-    void ExtractTalentTemplateToDB(Player* player, const std::string& playerSpec);
-    void ExtractGlyphsTemplateToDB(Player* player, const std::string& playerSpec);
-    void InsertIndexEntryToDB(Player* player, const std::string& playerSpec);
-    bool IsWearingAnyGear(Player* player);
-    bool HasSpentTalentPoints(Player* player);
+    static bool PreApplyChecks(Player* player, TemplateEntry* templateEntry, TemplateFlags parts);
+    void ApplyGearPart(Player* player, TemplateEntry* templateEntry);
+    void ApplyTalentsPart(Player* player, TemplateEntry* templateEntry);
+    void ApplyGlyphsPart(Player* player, TemplateEntry* templateEntry);
+    void PostApplyUpdates(Player* player, TemplateEntry* templateEntry, TemplateFlags parts) const;
 
-    std::string GetClassString(Player* player);
+    static bool OverwriteKit(uint32 kitId);
+    static void ExtractGearKitToDB(Player* player, uint32 kitId);
+    static void ExtractTalentKitToDB(Player* player, uint32 kitId);
+    static void ExtractGlyphKitToDB(Player* player, uint32 kitId);
+    static uint32 InsertKitEntryToDB(Player* player, uint32 kitId, const std::string& kitType, const std::string& name);
 
     void EquipTemplateGear(Player* player, const std::string& sGear);
-    void SatisfyExtraGearRequirements(Player* player, const std::string& sGear);
     void LearnTemplateTalents(Player* player, const std::string& sTalents);
     void LearnTemplateGlyphs(Player* player, const std::string& sGlyphs);
-    void ApplyTemplate(Player* player, IndexTemplate* indexTemplate);
+    void ApplyTemplate(Player* player, TemplateEntry* templateEntry);
 
-    void LearnPlateMailSpells(Player* player);
+    GearKitContainer gearKits;
+    GlyphKitContainer glyphKits;
+    TalentKitContainer talentKits;
+    TemplateContainer templateContainer;
 
-    GearContainer gearContainer;
-    GlyphContainer glyphContainer;
-    TalentContainer talentContainer;
-    IndexContainer indexContainer;
-
-    bool enableResetTalents;
-    bool enableRemoveAllGlyphs;
-    bool enableDestroyEquippedGear;
-    uint32 allianceMount;
-    uint32 hordeMount;
+    bool enableResetTalents{};
+    bool enableRemoveAllGlyphs{};
+    bool enableDestroyEquippedGear{};
+    uint32 allianceMount{};
+    uint32 hordeMount{};
 };
 
-#define sTemplateNpcMgr sTemplateNPC::instance()
+std::string GetClassString(Player* player);
+void LearnPlateMailSpells(Player *player);
+void ApplyBonus(Player* player, Item* item, EnchantmentSlot slot, uint32 bonusEntry);
+void ApplyGlyph(Player* player, uint8 slot, uint32 glyphID);
+void RemoveAllGlyphs(Player* player);
+
+bool IsWearingAnyGear(Player* player);
+bool HasSpentTalentPoints(Player* player);
+void SatisfyExtraGearRequirements(Player* player, const std::string& sGear);
+void LearnWeaponSkills(Player* player);
+
+} // namespace NPCTalentTemplate
+
+#define sTemplateNpcMgr NPCTalentTemplate::sTemplateNPC::instance()
 #endif
